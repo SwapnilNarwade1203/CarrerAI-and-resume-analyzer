@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.title }} – Project Builder{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Page Header ────────────────────────────────────────── */
+.project-hero {
+  background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.project-hero::before {
+  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle at center, rgba(139,92,246,0.15) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.hero-content { position: relative; z-index: 1; }
+.back-btn {
+  font-size: .8rem; font-weight: 600; color: var(--text-muted);
+  text-decoration: none; display: inline-flex; align-items: center; gap: .5rem;
+  background: rgba(255,255,255,0.05); padding: .4rem .8rem; border-radius: 8px;
+  transition: all 0.2s; margin-bottom: 1.2rem;
+}
+.back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+.status-badge {
+  padding: .35rem .8rem; border-radius: 20px; font-size: .75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; border: 1px solid transparent;
+}
+.status-badge.Planning { background: rgba(100,116,139,0.2); color: #94a3b8; border-color: rgba(100,116,139,0.3); }
+.status-badge.In.Progress, .status-badge.In_Progress { background: rgba(245,158,11,0.2); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+.status-badge.Completed { background: rgba(16,185,129,0.2); color: #34d399; border-color: rgba(16,185,129,0.3); }
+
+/* ── Timeline ─────────────────────────────────────────── */
+.timeline-wrap { position: relative; padding-left: 2rem; }
+.timeline-wrap::before {
+  content: ''; position: absolute; left: 11px; top: 10px; bottom: 30px;
+  width: 2px; background: rgba(255,255,255,0.08); border-radius: 2px;
+}
+.t-step { position: relative; margin-bottom: 1.8rem; }
+.t-step:last-child { margin-bottom: 0; }
+.t-dot {
+  position: absolute; left: -2rem; top: 2px; width: 24px; height: 24px;
+  border-radius: 50%; background: var(--card-bg); border: 2px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700;
+  color: var(--text-muted); z-index: 2; transition: all 0.3s ease;
+}
+.t-card {
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; padding: 1.2rem; transition: all 0.2s;
+}
+.t-card:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); }
+.t-title { font-size: .95rem; font-weight: 700; color: #e2e8f0; margin-bottom: .4rem; }
+.t-desc { font-size: .8rem; color: #94a3b8; line-height: 1.5; margin-bottom: 1rem; }
+
+/* Completed State */
+.t-step.completed .t-dot {
+  background: rgba(16,185,129,0.2); border-color: #10b981; color: #10b981;
+  box-shadow: 0 0 12px rgba(16,185,129,0.3);
+}
+.t-step.completed .t-card { border-color: rgba(16,185,129,0.2); background: rgba(16,185,129,0.03); }
+.t-step.completed .t-title { color: #34d399; text-decoration: line-through; opacity: 0.8; }
+.t-step.completed .t-desc { opacity: 0.6; }
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn-toggle {
+  font-size: .75rem; font-weight: 600; padding: .4rem 1rem; border-radius: 6px;
+  display: inline-flex; align-items: center; gap: .4rem; transition: all 0.2s;
+}
+.btn-mark-done { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.btn-mark-done:hover { background: rgba(16,185,129,0.25); color: #fff; transform: translateY(-1px); }
+.btn-undo { background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); }
+.btn-undo:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+
+/* ── Details Panel ───────────────────────────────────────── */
+.d-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: .4rem; }
+.d-value { font-size: .85rem; color: #e2e8f0; margin-bottom: 1.2rem; line-height: 1.5; }
+.skill-pill {
+  display: inline-block; padding: .25rem .75rem; border-radius: 20px; font-size: .7rem; font-weight: 600;
+  background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); margin: 0 .3rem .4rem 0;
+}
+.progress-container { background: rgba(255,255,255,0.05); height: 8px; border-radius: 4px; overflow: hidden; margin-top: .5rem; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 4px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- HERO HEADER -->
+<div class="project-hero">
+  <div class="hero-content">
+    <a href="{% url 'create_project' %}" class="back-btn">
+      <i class="fa-solid fa-arrow-left"></i> Back to Builder
+    </a>
+    
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h1 class="mb-2" style="font-size: 2.2rem; font-weight: 800; color: #fff;">{{ project.title }}</h1>
+        <div class="d-flex align-items-center gap-3 mt-3">
+          <span class="status-badge {{ project.status|replace:' ','_' }}">{{ project.get_status_display }}</span>
+          
+          {% if project.github_repo_url %}
+          <a href="{{ project.github_repo_url }}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
+            <i class="fa-brands fa-github me-2"></i>View Repository
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Progress Circular / Textual -->
+      <div class="text-end bg-dark bg-opacity-25 p-3 rounded-3 border border-light border-opacity-10">
+        <div class="d-label mb-1">Roadmap Progress</div>
+        <div class="d-flex align-items-baseline gap-1 justify-content-end">
+          <span id="pct-text" style="font-size: 2rem; font-weight: 800; color: #8b5cf6; line-height: 1;">0</span>
+          <span style="font-size: 1rem; color: #94a3b8; font-weight: 600;">%</span>
+        </div>
+        <div class="text-muted" style="font-size: .7rem; margin-top: .2rem;"><span id="step-count-text">0/0</span> Steps Completed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- ROADMAP TIMELINE (Left) -->
+  <div class="col-lg-8">
+    <div class="card-glass h-100">
+      <div class="card-glass-header border-bottom border-light border-opacity-10">
+        <i class="fa-solid fa-map-location-dot me-2 text-primary"></i>Execution Roadmap
+      </div>
+      <div class="card-glass-body p-4">
+        
+        {% if project.roadmap %}
+        <div class="timeline-wrap">
+          {% for step in project.roadmap %}
+          <div class="t-step roadmap-step {% if step.done %}completed{% endif %}" data-done="{% if step.done %}true{% else %}false{% endif %}">
+            <div class="t-dot">
+              {% if step.done %}<i class="fa-solid fa-check"></i>{% else %}{{ forloop.counter }}{% endif %}
+            </div>
+            
+            <div class="t-card">
+              <div class="d-flex justify-content-between align-items-start gap-3">
+                <div class="flex-grow-1">
+                  <div class="t-title">{{ step.title }}</div>
+                  <div class="t-desc">{{ step.description }}</div>
+                </div>
+                
+                <form method="post" class="flex-shrink-0">
+                  {% csrf_token %}
+                  <input type="hidden" name="step_index" value="{{ forloop.counter0 }}">
+                  {% if step.done %}
+                  <button type="submit" class="btn-toggle btn-undo">
+                    <i class="fa-solid fa-rotate-left"></i> Undo
+                  </button>
+                  {% else %}
+                  <button type="submit" class="btn-toggle btn-mark-done">
+                    <i class="fa-solid fa-check"></i> Mark Done
+                  </button>
+                  {% endif %}
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <i class="fa-solid fa-route fa-3x text-muted mb-3 opacity-25"></i>
+          <h6 class="text-white">No roadmap steps found.</h6>
+          <p class="text-muted small">Roadmap generation might have failed or is empty.</p>
+        </div>
+        {% endif %}
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT DETAILS (Right) -->
+  <div class="col-lg-4">
+    <div class="card-glass sticky-top" style="top: 20px;">
+      <div class="card-glass-header border-bottom border-light border-opacity-10">
+        <i class="fa-solid fa-circle-info me-2 text-info"></i>Project Details
+      </div>
+      <div class="card-glass-body p-4">
+        
+        <div class="d-label">Description</div>
+        <div class="d-value">{{ project.description }}</div>
+        
+        <div class="d-label">Skills Applied</div>
+        <div class="mb-4">
+          {% for skill in project.skills_used.all %}
+          <span class="skill-pill">{{ skill.name }}</span>
+          {% empty %}
+          <span class="text-muted small fst-italic">No skills tagged.</span>
+          {% endfor %}
+        </div>
+        
+        <div class="row mb-4">
+          <div class="col-6">
+            <div class="d-label">Status</div>
+            <div class="d-value mb-0">{{ project.get_status_display }}</div>
+          </div>
+          <div class="col-6">
+            <div class="d-label">Created On</div>
+            <div class="d-value mb-0">{{ project.created_at|date:"M d, Y" }}</div>
+          </div>
+        </div>
+        
+        <div class="bg-dark bg-opacity-25 p-3 rounded-3 border border-light border-opacity-10 mt-2">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="d-label mb-0">Overall Progress</span>
+            <span class="text-white fw-bold" style="font-size:.75rem;" id="progress-bar-text">0%</span>
+          </div>
+          <div class="progress-container">
+            <div class="progress-fill" id="progress-fill-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Safe calculation of progress using JS to avoid Jinja/Django template incompatibilities
+  const steps = document.querySelectorAll('.roadmap-step');
+  const total = steps.length;
+  let completed = 0;
+  
+  steps.forEach(step => {
+    if (step.getAttribute('data-done') === 'true') {
+      completed++;
+    }
+  });
+  
+  const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+  
+  // Animate progress bars
+  setTimeout(() => {
+    document.getElementById('progress-fill-bar').style.width = pct + '%';
+    document.getElementById('pct-text').innerText = pct;
+    document.getElementById('progress-bar-text').innerText = pct + '%';
+    document.getElementById('step-count-text').innerText = completed + '/' + total;
+  }, 100);
+});
+</script>
+{% endblock %}

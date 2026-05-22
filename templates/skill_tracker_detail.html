@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}{{ skill.name }} – Skill Tracker{% endblock %}
+{% block content %}
+<div class="page-header">
+  <a href="{% url 'skill_tracker_list' %}" class="back-btn"><i class="fa-solid fa-arrow-left me-2"></i>Skill Tracker</a>
+  <h1 class="page-title mt-2">{{ skill.name }}</h1>
+  <p class="page-subtitle">Level {{ sp.level }}% complete · Test Score: {{ sp.test_score|floatformat:0 }}%</p>
+</div>
+
+<div class="row g-4">
+  <!-- Roadmap -->
+  <div class="col-lg-8">
+    <div class="card-glass mb-4">
+      <div class="card-glass-header"><i class="fa-solid fa-road me-2" style="color:var(--primary)"></i>Learning Roadmap</div>
+      <div class="card-glass-body">
+        {% if sp.roadmap %}
+        <div class="roadmap-timeline">
+          {% for step in sp.roadmap %}
+          <div class="roadmap-step {% if forloop.counter0 in sp.completed_steps %}completed{% endif %}">
+            <div class="roadmap-dot">
+              {% if forloop.counter0 in sp.completed_steps %}<i class="fa-solid fa-check"></i>{% else %}{{ forloop.counter }}{% endif %}
+            </div>
+            <div class="roadmap-content">
+              <h6 class="mb-1">{{ step.title }}</h6>
+              <p class="text-muted small mb-2">{{ step.description }}</p>
+              {% if step.duration %}<span class="duration-badge"><i class="fa-solid fa-clock me-1"></i>{{ step.duration }}</span>{% endif %}
+              {% if step.interview_tips %}<p class="tip-text mt-2"><i class="fa-solid fa-lightbulb me-1" style="color:var(--warning)"></i>{{ step.interview_tips }}</p>{% endif %}
+              {% if step.resources %}<div class="mt-2">{% for url in step.resources %}<a href="{{ url }}" target="_blank" class="resource-link me-2"><i class="fa-solid fa-external-link me-1 small"></i>Resource</a>{% endfor %}</div>{% endif %}
+              {% if forloop.counter0 not in sp.completed_steps %}
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="step_index" value="{{ forloop.counter0 }}">
+                <button type="submit" class="btn btn-xs btn-success"><i class="fa-solid fa-check me-1"></i>Mark Complete</button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No roadmap loaded yet. Common roadmaps are available for Python, Django, JavaScript, SQL, React, and Machine Learning.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- YouTube Videos -->
+    {% if videos %}
+    <div class="card-glass mb-4">
+      <div class="card-glass-header"><i class="fa-brands fa-youtube me-2" style="color:#ff0000"></i>Learn {{ skill.name }}</div>
+      <div class="card-glass-body">
+        <div class="row g-3">
+          {% for vid in videos %}
+          <div class="col-md-6">
+            <a href="{{ vid.url }}" target="_blank" class="video-card">
+              {% if vid.thumbnail %}<img src="{{ vid.thumbnail }}" class="video-thumbnail" alt="{{ vid.title }}">{% else %}<div class="video-thumbnail video-thumb-placeholder"><i class="fa-brands fa-youtube fa-2x"></i></div>{% endif %}
+              <div class="video-info"><p class="video-title mb-0">{{ vid.title }}</p><span class="video-channel">{{ vid.channel }}</span></div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Practice Links -->
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-code me-2" style="color:var(--accent)"></i>Practice {{ skill.name }}</div>
+      <div class="card-glass-body">
+        <div class="row g-3">
+          {% for link in practice_links %}
+          <div class="col-md-6">
+            <a href="{{ link.url }}" target="_blank" class="practice-link-card">
+              <i class="fa-solid {{ link.icon }} me-2"></i>{{ link.name }}
+              <i class="fa-solid fa-arrow-up-right-from-square ms-auto small"></i>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Actions -->
+  <div class="col-lg-4">
+    <div class="card-glass mb-4">
+      <div class="card-glass-body text-center">
+        <div class="skill-level-circle mb-3"><span>{{ sp.level }}%</span></div>
+        <h6>{{ skill.name }} Progress</h6>
+        <div class="progress mb-3" style="height:10px"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width:{{ sp.level }}%"></div></div>
+        {% if questions_count > 0 %}
+        <a href="{% url 'skill_test' skill.pk %}" class="btn btn-primary w-100 mb-2"><i class="fa-solid fa-pen-to-square me-2"></i>Take Skill Test</a>
+        {% if sp.test_score >= 80 %}
+        <a href="{% url 'generate_certificate' skill.pk %}" class="btn btn-success w-100 mb-2"><i class="fa-solid fa-certificate me-2"></i>Get Certificate</a>
+        {% endif %}
+        {% else %}
+        <p class="text-muted small">No test questions available yet for this skill.</p>
+        {% endif %}
+        <a href="{% url 'create_project' %}" class="btn btn-outline-primary w-100">
+          <i class="fa-solid fa-hammer me-2"></i>Build a Project
+        </a>
+      </div>
+    </div>
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-graduation-cap me-2" style="color:var(--success)"></i>Quick Stats</div>
+      <div class="card-glass-body">
+        <div class="stat-row"><span>Best Test Score</span><strong>{{ sp.test_score|floatformat:0 }}%</strong></div>
+        <div class="stat-row"><span>Steps Completed</span><strong>{{ sp.completed_steps|length }}/{{ sp.roadmap|length }}</strong></div>
+        <div class="stat-row"><span>Last Updated</span><strong>{{ sp.last_updated|date:"M d, Y" }}</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

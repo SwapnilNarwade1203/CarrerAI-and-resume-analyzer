@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block title %}{{ topic.name }} – Aptitude Practice{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <a href="{% url 'aptitude_prep' %}" class="back-btn"><i class="fa-solid fa-arrow-left me-2"></i>All Topics</a>
+  <h1 class="page-title mt-2">{{ topic.name }}</h1>
+  {% if topic.description %}<p class="page-subtitle">{{ topic.description }}</p>{% endif %}
+</div>
+
+{% if results %}
+<!-- ══════════════════════════════════════════════
+     RESULTS VIEW
+══════════════════════════════════════════════ -->
+{% with correct_count=0 %}
+{% for r in results %}{% if r.is_correct %}{% with correct_count=correct_count|add:1 %}{% endwith %}{% endif %}{% endfor %}
+
+<div class="row justify-content-center mb-5">
+  <div class="col-lg-7">
+
+    <!-- Score Card -->
+    <div class="apt-result-card">
+      <div class="apt-result-header">Quiz Complete!</div>
+      <div class="apt-result-body">
+        <!-- Big Score Ring -->
+        <div class="apt-score-ring
+          {% if score >= 90 %}apt-ring-green
+          {% elif score >= 70 %}apt-ring-amber
+          {% elif score >= 50 %}apt-ring-orange
+          {% else %}apt-ring-red{% endif %}">
+          <span class="apt-ring-num">{{ score|floatformat:0 }}<span class="apt-ring-pct">%</span></span>
+          <span class="apt-ring-label">Score</span>
+        </div>
+
+        <!-- Stats row -->
+        <div class="apt-result-stats">
+          <div class="apt-rs-item apt-rs-correct">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>{{ results|length }}</span>
+            <div>Attempted</div>
+          </div>
+          <div class="apt-rs-item apt-rs-wrong">
+            <i class="fa-solid fa-circle-xmark"></i>
+            <span>–</span>
+            <div>Wrong</div>
+          </div>
+        </div>
+
+        <!-- Performance message -->
+        <div class="apt-result-msg
+          {% if score >= 90 %}apt-msg-green
+          {% elif score >= 70 %}apt-msg-amber
+          {% else %}apt-msg-red{% endif %}">
+          {% if score >= 90 %}
+            🏆 Excellent! Outstanding performance. Move to the next topic!
+          {% elif score >= 70 %}
+            ✅ Good job! You're on the right track. Try one more time to hit 90%+!
+          {% elif score >= 50 %}
+            📖 Average score. Review the explanations below and retry.
+          {% else %}
+            🔁 Keep practicing! Study the explanations carefully and try again.
+          {% endif %}
+        </div>
+
+        <div class="d-flex gap-3 justify-content-center">
+          <a href="{% url 'aptitude_topic' topic.pk %}" class="btn btn-primary">
+            <i class="fa-solid fa-rotate-right me-2"></i>Retry
+          </a>
+          <a href="{% url 'aptitude_prep' %}" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left me-2"></i>All Topics
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Answer Review -->
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <h5 class="apt-section-title mb-3"><i class="fa-solid fa-list-check me-2"></i>Answer Review</h5>
+    {% for r in results %}
+    <div class="apt-review-card {% if r.is_correct %}apt-review-correct{% else %}apt-review-wrong{% endif %}">
+      <div class="apt-review-header">
+        {% if r.is_correct %}
+        <span class="apt-review-badge apt-rbadge-correct"><i class="fa-solid fa-check me-1"></i>Correct</span>
+        {% else %}
+        <span class="apt-review-badge apt-rbadge-wrong"><i class="fa-solid fa-xmark me-1"></i>Wrong</span>
+        {% endif %}
+        <span class="apt-review-num">Q{{ forloop.counter }}</span>
+      </div>
+      <div class="apt-review-q">{{ r.question }}</div>
+      <div class="apt-review-answers">
+        {% if not r.is_correct %}
+        <div class="apt-ans apt-ans-wrong"><i class="fa-solid fa-xmark me-2"></i>Your answer: <strong>{{ r.your_answer }}</strong></div>
+        {% endif %}
+        <div class="apt-ans apt-ans-correct"><i class="fa-solid fa-check me-2"></i>Correct: <strong>{{ r.correct_answer }}</strong></div>
+      </div>
+      {% if r.explanation %}
+      <div class="apt-explanation"><i class="fa-solid fa-lightbulb me-2" style="color:var(--amber)"></i>{{ r.explanation }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endwith %}
+
+{% else %}
+<!-- ══════════════════════════════════════════════
+     QUIZ FORM
+══════════════════════════════════════════════ -->
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+
+    <!-- Quiz Header -->
+    <div class="apt-quiz-header mb-4">
+      <div class="apt-quiz-meta">
+        <span class="apt-quiz-badge"><i class="fa-solid fa-circle-question me-1"></i>{{ questions|length }} Questions</span>
+        <span class="apt-quiz-badge"><i class="fa-solid fa-clock me-1"></i>~15 min</span>
+        <span class="apt-quiz-badge"><i class="fa-solid fa-shuffle me-1"></i>Random</span>
+      </div>
+      <!-- Timer -->
+      <div class="apt-timer" id="aptTimer">
+        <i class="fa-solid fa-stopwatch me-1"></i><span id="timerDisplay">00:00</span>
+      </div>
+    </div>
+
+    <!-- Progress indicator -->
+    <div class="apt-quiz-progress mb-4">
+      <div class="apt-quiz-progress-fill" style="width:0%" id="progressFill"></div>
+    </div>
+
+    <form method="post" id="quizForm">
+      {% csrf_token %}
+      {% for q in questions %}
+      <div class="apt-quiz-card" id="qblock-{{ forloop.counter }}" {% if not forloop.first %}style="display:none"{% endif %}>
+        <!-- Question -->
+        <div class="apt-quiz-q-header">
+          <span class="apt-qnum-badge">{{ forloop.counter }} / {{ questions|length }}</span>
+          <p class="apt-quiz-q-text">{{ q.question }}</p>
+        </div>
+        <!-- Options -->
+        <div class="apt-quiz-options">
+          <label class="apt-opt">
+            <input type="radio" name="q_{{ q.pk }}" value="A" required>
+            <span class="apt-opt-letter">A</span>
+            <span class="apt-opt-text">{{ q.option_a }}</span>
+          </label>
+          <label class="apt-opt">
+            <input type="radio" name="q_{{ q.pk }}" value="B">
+            <span class="apt-opt-letter">B</span>
+            <span class="apt-opt-text">{{ q.option_b }}</span>
+          </label>
+          <label class="apt-opt">
+            <input type="radio" name="q_{{ q.pk }}" value="C">
+            <span class="apt-opt-letter">C</span>
+            <span class="apt-opt-text">{{ q.option_c }}</span>
+          </label>
+          <label class="apt-opt">
+            <input type="radio" name="q_{{ q.pk }}" value="D">
+            <span class="apt-opt-letter">D</span>
+            <span class="apt-opt-text">{{ q.option_d }}</span>
+          </label>
+        </div>
+        <!-- Nav buttons -->
+        <div class="apt-quiz-nav">
+          {% if not forloop.first %}
+          <button type="button" class="btn btn-secondary btn-sm apt-prev" data-idx="{{ forloop.counter }}">
+            <i class="fa-solid fa-arrow-left me-1"></i>Prev
+          </button>
+          {% else %}
+          <span></span>
+          {% endif %}
+          {% if not forloop.last %}
+          <button type="button" class="btn btn-primary btn-sm apt-next" data-idx="{{ forloop.counter }}" data-total="{{ questions|length }}">
+            Next <i class="fa-solid fa-arrow-right ms-1"></i>
+          </button>
+          {% else %}
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-paper-plane me-1"></i>Submit Quiz
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Question-by-question navigation ──────────────
+const total = parseInt('{{ questions|length }}');
+let current = 1;
+
+function showQ(n) {
+  document.querySelectorAll('[id^="qblock-"]').forEach(el => el.style.display = 'none');
+  const block = document.getElementById('qblock-' + n);
+  if (block) block.style.display = '';
+  // Update progress bar
+  const pct = ((n - 1) / total) * 100;
+  const fill = document.getElementById('progressFill');
+  if (fill) fill.style.width = pct + '%';
+}
+
+document.querySelectorAll('.apt-next').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Validate current answer before advancing
+    const card = document.getElementById('qblock-' + btn.dataset.idx);
+    const selected = card ? card.querySelector('input[type=radio]:checked') : null;
+    if (!selected) {
+      btn.classList.add('apt-btn-shake');
+      btn.textContent = '⚠ Select an answer';
+      setTimeout(() => { btn.classList.remove('apt-btn-shake'); btn.innerHTML = 'Next <i class="fa-solid fa-arrow-right ms-1"></i>'; }, 1000);
+      return;
+    }
+    current++;
+    showQ(current);
+  });
+});
+
+document.querySelectorAll('.apt-prev').forEach(btn => {
+  btn.addEventListener('click', () => { current--; showQ(current); });
+});
+
+// ── Timer ─────────────────────────────────────────
+let sec = 0;
+const timerEl = document.getElementById('timerDisplay');
+if (timerEl) {
+  setInterval(() => {
+    sec++;
+    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    timerEl.textContent = m + ':' + s;
+    // Turn red after 15 minutes
+    if (sec >= 900) document.getElementById('aptTimer').style.color = 'var(--red)';
+  }, 1000);
+}
+
+// ── Option highlight on select ────────────────────
+document.querySelectorAll('.apt-opt input[type=radio]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const group = document.querySelectorAll(`input[name="${radio.name}"]`);
+    group.forEach(r => r.closest('.apt-opt').classList.remove('apt-opt-selected'));
+    radio.closest('.apt-opt').classList.add('apt-opt-selected');
+  });
+});
+</script>
+{% endblock %}

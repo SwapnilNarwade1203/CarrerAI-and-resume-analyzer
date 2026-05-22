@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load analyzer_tags %}
+{% block title %}{{ skill.name }} Skill Test{% endblock %}
+{% block content %}
+<div class="page-header">
+  <a href="{% url 'skill_tracker_detail' skill.pk %}" class="back-btn"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+  <h1 class="page-title mt-2">{{ skill.name }} Skill Test</h1>
+  {% if not submitted %}<p class="page-subtitle">{{ questions|length }} questions • Answer all and submit</p>{% endif %}
+</div>
+
+{% if submitted %}
+<!-- Results -->
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card-glass mb-4">
+      <div class="card-glass-body text-center py-4">
+        <div class="score-ring-xl mx-auto mb-3"><span class="score-val-xl">{{ score|floatformat:0 }}<small>%</small></span></div>
+        <h4>{% if passed %}🎉 Congratulations! You passed!{% else %}Keep Practicing!{% endif %}</h4>
+        <p class="text-muted">{{ correct }}/{{ total }} correct · Score: {{ score }}%</p>
+        {% if passed %}<a href="{% url 'generate_certificate' skill.pk %}" class="btn btn-success me-2"><i class="fa-solid fa-certificate me-1"></i>Get Certificate</a>{% endif %}
+        <a href="{% url 'skill_test' skill.pk %}" class="btn btn-outline-primary"><i class="fa-solid fa-rotate me-1"></i>Retry Test</a>
+      </div>
+    </div>
+    <!-- Detailed Results -->
+    {% for r in results %}
+    <div class="card-glass mb-3 {% if r.is_correct %}border-success{% else %}border-danger{% endif %}" style="border-left:3px solid">
+      <div class="card-glass-body">
+        <p class="fw-500 mb-2">{{ forloop.counter }}. {{ r.question }}</p>
+        <div class="row g-2 mb-2">
+          {% for k, v in r.options.items %}
+          <div class="col-md-6"><div class="option-result {% if k == r.correct_answer %}option-correct{% elif k == r.your_answer and not r.is_correct %}option-wrong{% endif %}">
+            <strong>{{ k }}.</strong> {{ v }}
+            {% if k == r.correct_answer %}<i class="fa-solid fa-check ms-1 text-success"></i>{% elif k == r.your_answer and not r.is_correct %}<i class="fa-solid fa-xmark ms-1 text-danger"></i>{% endif %}
+          </div></div>
+          {% endfor %}
+        </div>
+        {% if r.explanation %}<div class="explanation-box"><i class="fa-solid fa-lightbulb me-2" style="color:var(--warning)"></i>{{ r.explanation }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+<!-- Test Form -->
+<form method="post" action="{% url 'submit_skill_test' skill.pk %}" id="testForm">
+  {% csrf_token %}
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      {% for q in questions %}
+      <div class="card-glass mb-4" id="q{{ forloop.counter }}">
+        <div class="card-glass-body">
+          <div class="question-header"><span class="q-number">Q{{ forloop.counter }}</span><p class="fw-500 mb-0 flex-grow-1">{{ q.question }}</p></div>
+          <div class="options-grid mt-3">
+            <label class="option-label"><input type="radio" name="q_{{ q.pk }}" value="A" required><span class="option-text">A. {{ q.option_a }}</span></label>
+            <label class="option-label"><input type="radio" name="q_{{ q.pk }}" value="B"><span class="option-text">B. {{ q.option_b }}</span></label>
+            <label class="option-label"><input type="radio" name="q_{{ q.pk }}" value="C"><span class="option-text">C. {{ q.option_c }}</span></label>
+            <label class="option-label"><input type="radio" name="q_{{ q.pk }}" value="D"><span class="option-text">D. {{ q.option_d }}</span></label>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <a href="{% url 'skill_tracker_detail' skill.pk %}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-paper-plane me-2"></i>Submit Test</button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

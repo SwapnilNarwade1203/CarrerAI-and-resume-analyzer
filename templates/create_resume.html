@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Resume Builder – CareerAI{% endblock %}
+{% block content %}
+<div class="page-header"><h1 class="page-title">Resume Builder</h1><p class="page-subtitle">Choose a template and build your professional resume.</p></div>
+<div class="row g-4">
+  <div class="col-md-4">
+    <a href="{% url 'create_resume_form' %}" class="template-card">
+      <div class="template-preview minimal-preview"><div class="preview-line"></div><div class="preview-line short"></div><div class="preview-line"></div><div class="preview-line short"></div></div>
+      <h6>Minimal</h6><p class="text-muted small">Clean and ATS-friendly</p>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="{% url 'create_resume_form' %}" class="template-card">
+      <div class="template-preview professional-preview"><div class="preview-header-bar"></div><div class="preview-line"></div><div class="preview-line short"></div></div>
+      <h6>Professional</h6><p class="text-muted small">Corporate look with accents</p>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="{% url 'ats_resume_formatter' %}" class="template-card">
+      <div class="template-preview ats-preview"><div class="preview-label">ATS</div></div>
+      <h6>ATS Optimized</h6><p class="text-muted small">Best for applicant tracking systems</p>
+    </a>
+  </div>
+</div>
+{% endblock %}

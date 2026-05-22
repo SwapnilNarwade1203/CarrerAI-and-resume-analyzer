@@ -1,0 +1,101 @@
+======================================================
+AI RESUME ANALYZER & CAREER STUDIO - SETUP INSTRUCTIONS
+======================================================
+
+Welcome to the CareerAI! This document contains all the steps 
+you need to set up the project on your local machine.
+
+------------------------------------------------------
+PREREQUISITES (What you need to download first)
+------------------------------------------------------
+1. Python (3.10 or higher)
+   Download from: https://www.python.org/downloads/
+   *IMPORTANT*: During installation, make sure to check the box that says 
+   "Add Python to PATH".
+
+2. Git (Optional, but recommended)
+   Download from: https://git-scm.com/downloads
+
+3. A Code Editor (like VS Code)
+   Download from: https://code.visualstudio.com/
+
+------------------------------------------------------
+STEP-BY-STEP IMPLEMENTATION GUIDE
+------------------------------------------------------
+
+STEP 1: Extract the Project ZIP
+-------------------------------
+Extract the `ResumeAI_Project.zip` folder to a location on your computer 
+(e.g., your Desktop or Documents folder). Open this folder in your terminal 
+or command prompt.
+
+STEP 2: Create a Virtual Environment
+------------------------------------
+It is best practice to use a virtual environment to keep dependencies clean.
+Run the following commands in your terminal:
+
+Windows:
+> python -m venv venv
+> venv\Scripts\activate
+
+Mac/Linux:
+> python3 -m venv venv
+> source venv/bin/activate
+
+STEP 3: Install Required Packages
+---------------------------------
+With your virtual environment activated, install all the required Python 
+libraries from the `requirements.txt` file:
+
+> pip install -r requirements.txt
+
+STEP 4: Download the NLP Model (spacy)
+--------------------------------------
+This project uses Natural Language Processing to analyze resumes. Download 
+the English language model by running:
+
+> python -m spacy download en_core_web_sm
+
+STEP 5: Set Up Environment Variables (API Keys)
+-----------------------------------------------
+1. Create a file named `.env` in the root folder (where `manage.py` is).
+2. Open it and add your API keys. It should look like this:
+
+   OPENAI_API_KEY=your_openai_api_key_here
+   YOUTUBE_API_KEY=your_youtube_api_key_here
+   GITHUB_TOKEN=your_github_personal_access_token
+   SECRET_KEY=your_django_secret_key
+
+   (If you don't have these keys, some AI features might fall back 
+   to mock data or return errors, but the core app will still run).
+
+STEP 6: Apply Database Migrations
+---------------------------------
+Set up the SQLite database by running the Django migration commands:
+
+> python manage.py makemigrations
+> python manage.py migrate
+
+(Optional) To load the default interview/company questions into the database:
+> python manage.py seed_company_questions
+
+STEP 7: Create an Admin Account (Superuser)
+-------------------------------------------
+To access the Django Admin panel, create an admin account:
+
+> python manage.py createsuperuser
+
+Follow the prompts to set your username, email, and password.
+
+STEP 8: Run the Project
+-----------------------
+Start the development server:
+
+> python manage.py runserver
+
+Once the server is running, open your web browser and go to:
+http://127.0.0.1:8000/
+
+------------------------------------------------------
+You're all set! Enjoy using the CareerAI.
+======================================================

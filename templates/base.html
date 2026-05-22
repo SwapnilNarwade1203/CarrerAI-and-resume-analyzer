@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CareerAI{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}AI-powered resume &amp; skill gap analyzer to accelerate your career.{% endblock %}">
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Google Fonts: Syne + DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#f59e0b">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<!-- ── VERTICAL SIDEBAR ─────────────────────────────── -->
+<nav class="vertical-sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="{% url 'dashboard' %}" class="sidebar-brand">
+      <i class="fa-solid fa-brain" style="color:var(--amber)"></i>
+      Resume<span>AI</span>
+    </a>
+  </div>
+
+  <!-- Theme Toggle -->
+  <div class="sidebar-theme-wrap">
+    <button class="theme-toggle-btn" id="themeToggle" title="Toggle dark/light mode">
+      <i class="fa-solid fa-moon theme-icon-dark"></i>
+      <span class="theme-label-dark">Dark</span>
+      <i class="fa-solid fa-sun theme-icon-light"></i>
+      <span class="theme-label-light">Light</span>
+    </button>
+  </div>
+
+  <ul class="sidebar-nav">
+    <li class="nav-section-label">Main</li>
+    <li>
+      <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'skill_tracker_list' %}" class="{% if 'skill' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa-solid fa-chart-line"></i><span>Skill Tracker</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'interview_prep' %}" class="{% if request.resolver_match.url_name == 'interview_prep' %}active{% endif %}">
+        <i class="fa-solid fa-comments"></i><span>Interview Prep</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'aptitude_prep' %}" class="{% if 'aptitude' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa-solid fa-brain"></i><span>Aptitude</span>
+      </a>
+    </li>
+
+    <li class="nav-section-label">Features</li>
+    <li>
+      <a href="{% url 'mock_interview' %}" class="{% if request.resolver_match.url_name == 'mock_interview' %}active{% endif %}">
+        <i class="fa-solid fa-microphone"></i><span>Mock Interview</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'create_project' %}" class="{% if 'project' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa-solid fa-hammer"></i><span>Project Builder</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'company_questions' %}" class="{% if request.resolver_match.url_name == 'company_questions' %}active{% endif %}">
+        <i class="fa-solid fa-building"></i><span>Company Q&amp;A</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'resume_studio' %}" class="{% if 'resume' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa-solid fa-id-card"></i><span>Resume Studio</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'compare_resumes' %}" class="{% if request.resolver_match.url_name == 'compare_resumes' %}active{% endif %}">
+        <i class="fa-solid fa-code-compare"></i><span>Compare Resumes</span>
+      </a>
+    </li>
+
+    <li class="nav-section-label">Community</li>
+    <li>
+      <a href="{% url 'leaderboard' %}" class="{% if request.resolver_match.url_name == 'leaderboard' %}active{% endif %}">
+        <i class="fa-solid fa-ranking-star"></i><span>Leaderboard</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'achievements' %}" class="{% if request.resolver_match.url_name == 'achievements' %}active{% endif %}">
+        <i class="fa-solid fa-trophy"></i><span>Achievements</span>
+      </a>
+    </li>
+
+    {% if user.is_staff %}
+    <li class="nav-section-label">Admin</li>
+    <li>
+      <a href="{% url 'admin_analytics' %}" class="{% if request.resolver_match.url_name == 'admin_analytics' %}active{% endif %}">
+        <i class="fa-solid fa-chart-pie"></i><span>Analytics</span>
+      </a>
+    </li>
+    {% endif %}
+
+    <li style="margin-top:auto;padding-top:16px">
+      <a href="{% url 'logout' %}" style="color:var(--red)">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<!-- ── MAIN CONTENT ─────────────────────────────────── -->
+<main class="main-content">
+
+{% else %}
+<!-- ── PUBLIC NAVBAR ──────────────────────────────── -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="{% url 'home' %}">
+      <i class="fa-solid fa-brain me-2" style="color:var(--amber)"></i>
+      Resume<span>AI</span>
+    </a>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <button class="theme-toggle-btn" id="themeToggle" title="Toggle theme">
+        <i class="fa-solid fa-moon theme-icon-dark"></i>
+        <span class="theme-label-dark">Dark</span>
+        <i class="fa-solid fa-sun theme-icon-light"></i>
+        <span class="theme-label-light">Light</span>
+      </button>
+      <a href="{% url 'login' %}" class="btn btn-secondary btn-sm">Login</a>
+      <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Get Started</a>
+    </div>
+  </div>
+</nav>
+<main class="container py-5">
+{% endif %}
+
+<!-- ── MESSAGES ───────────────────────────────────── -->
+{% if messages %}
+<div class="messages-container">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+    <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' or message.tags == 'danger' %}fa-circle-xmark{% elif message.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %} me-2"></i>
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+</main>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Custom JS -->
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+
+<script>
+// Theme toggle (works for both sidebar & navbar toggle)
+(function(){
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('#themeToggle');
+    if(!btn) return;
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  });
+})();
+
+// Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('{% static "sw.js" %}').catch(() => {});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Build Resume – CareerAI{% endblock %}
+{% block content %}
+<div class="page-header"><h1 class="page-title">Build Your Resume</h1></div>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-pen me-2" style="color:var(--primary)"></i>Resume Details</div>
+      <div class="card-glass-body">
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="mb-3"><label class="form-label text-muted small">{{ field.label }}</label>{{ field }}</div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-eye me-2"></i>Preview Resume</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-circle-info me-2"></i>Tips</div>
+      <div class="card-glass-body">
+        <ul class="tip-list text-muted small">
+          <li>Use action verbs: Developed, Led, Implemented</li>
+          <li>Add metrics: "Increased performance by 40%"</li>
+          <li>Keep it to 1-2 pages</li>
+          <li>Tailor each resume to the job description</li>
+          <li>Include relevant keywords from job postings</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

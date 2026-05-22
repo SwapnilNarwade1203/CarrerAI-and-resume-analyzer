@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Login – CareerAI{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+
+    <!-- Header -->
+    <div class="auth-logo">
+      <div class="auth-icon-wrap">
+        <i class="fa-solid fa-right-to-bracket"></i>
+      </div>
+      <h2 class="auth-title">Welcome Back</h2>
+      <p class="auth-subtitle">Sign in to continue your journey</p>
+    </div>
+
+    <!-- Form -->
+    <form method="post" class="auth-form" novalidate>
+      {% csrf_token %}
+
+      <!-- Username -->
+      <div class="auth-field">
+        <label class="auth-label">Username</label>
+        <div class="auth-input-wrap">
+          <i class="fa-solid fa-at auth-input-icon"></i>
+          {{ form.username }}
+        </div>
+        {% if form.username.errors %}
+        <div class="auth-error">{{ form.username.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Password -->
+      <div class="auth-field">
+        <label class="auth-label">Password</label>
+        <div class="auth-input-wrap">
+          <i class="fa-solid fa-lock auth-input-icon"></i>
+          {{ form.password }}
+        </div>
+        {% if form.password.errors %}
+        <div class="auth-error">{{ form.password.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger mt-2">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary w-100 auth-submit">
+        <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+      </button>
+    </form>
+
+    <p class="auth-footer-link">
+      Don't have an account? <a href="{% url 'register' %}">Register</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Admin Analytics – CareerAI{% endblock %}
+{% block content %}
+<div class="page-header"><h1 class="page-title">Admin Analytics</h1><p class="page-subtitle">Platform-wide statistics and insights.</p></div>
+<div class="row g-4 mb-5">
+  <div class="col-md-3"><div class="stat-card"><i class="fa-solid fa-users fa-2x mb-2" style="color:var(--primary)"></i><div class="stat-card-num">{{ total_users }}</div><div class="stat-card-label">Total Users</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><i class="fa-solid fa-file-alt fa-2x mb-2" style="color:var(--accent)"></i><div class="stat-card-num">{{ total_resumes }}</div><div class="stat-card-label">Resumes Analyzed</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><i class="fa-solid fa-chart-line fa-2x mb-2" style="color:var(--success)"></i><div class="stat-card-num">{{ avg_skill_level }}%</div><div class="stat-card-label">Avg Skill Level</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><i class="fa-solid fa-ranking-star fa-2x mb-2" style="color:var(--warning)"></i><div class="stat-card-num">{{ most_tracked|length }}</div><div class="stat-card-label">Top Tracked Skills</div></div></div>
+</div>
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-fire me-2" style="color:var(--warning)"></i>Most Tracked Skills</div>
+      <div class="card-glass-body p-0">
+        {% for item in most_tracked %}
+        <div class="lb-row"><span class="lb-user">{{ item.skill__name }}</span><div class="lb-bar flex-grow-1 mx-3"><div class="lb-bar-fill" style="width:{{ item.count }}0%"></div></div><strong>{{ item.count }} users</strong></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--primary)"></i>Recent Uploads</div>
+      <div class="card-glass-body p-0">
+        {% for r in recent_resumes %}
+        <div class="lb-row"><div class="user-ava">{{ r.user.username|first|upper }}</div><div class="flex-grow-1 px-2"><strong>{{ r.user.username }}</strong><br><small class="text-muted">{{ r.uploaded_at|date:"M d H:i" }}</small></div><span class="score-pill score-{{ r.score|floatformat:0 }}">{{ r.score }}%</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-briefcase me-2" style="color:var(--accent)"></i>Top Target Roles</div>
+      <div class="card-glass-body">
+        {% for role in top_roles %}<div class="d-flex justify-content-between mb-2"><span>{{ role.title }}</span><strong>{{ role.resume_count }} users</strong></div>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

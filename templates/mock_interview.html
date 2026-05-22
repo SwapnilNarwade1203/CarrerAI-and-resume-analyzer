@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Mock Interview – CareerAI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Mock Interview Simulator</h1>
+  <p class="page-subtitle">Practice answering real interview questions in a realistic session.</p>
+</div>
+
+{% if session and session.ended_at %}
+<!-- Ended Session -->
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card-glass mb-4">
+      <div class="card-glass-body text-center py-4">
+        <i class="fa-solid fa-flag-checkered fa-3x mb-3" style="color:var(--success)"></i>
+        <h4>Interview Complete!</h4>
+        <p class="text-muted">You answered {{ transcript|length }} questions. Score: <strong>{{ session.score|floatformat:0 }}%</strong></p>
+        <a href="{% url 'mock_interview' %}" class="btn btn-primary mt-2"><i class="fa-solid fa-plus me-2"></i>New Interview</a>
+      </div>
+    </div>
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-list me-2"></i>Session Transcript</div>
+      <div class="card-glass-body">
+        {% for entry in transcript %}
+        <div class="transcript-entry mb-4">
+          <div class="transcript-q"><i class="fa-solid fa-circle-question me-2" style="color:var(--primary)"></i><strong>Q{{ forloop.counter }}:</strong> {{ entry.question }}</div>
+          <div class="transcript-a mt-2"><i class="fa-solid fa-comment me-2" style="color:var(--success)"></i>{{ entry.answer }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% elif session and not session.ended_at %}
+<!-- Active Session -->
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="interview-progress mb-4">
+      <div class="d-flex justify-content-between text-muted small mb-1">
+        <span>Question {{ q_number }}</span>
+        <span>{{ transcript|length }} answered</span>
+      </div>
+      <div class="progress" style="height:6px"><div class="progress-bar" style="width:{{ q_number|add:'-1' }}0%"></div></div>
+    </div>
+    <div class="card-glass mb-4">
+      <div class="card-glass-body">
+        <div class="question-bubble mb-4">
+          <div class="interviewer-avatar"><i class="fa-solid fa-robot"></i></div>
+          <div class="question-text">{{ current_question }}</div>
+        </div>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="answer">
+          <div class="mb-3">
+            <textarea name="answer" class="form-control" rows="5" placeholder="Type your answer here..." required></textarea>
+          </div>
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-primary flex-grow-1"><i class="fa-solid fa-paper-plane me-2"></i>Submit Answer</button>
+            <form method="post" class="m-0"><{% csrf_token %}<input type="hidden" name="action" value="end"><input type="hidden" name="session_id" value="{{ session.pk }}"></form>
+          </div>
+        </form>
+        <form method="post" class="mt-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="end">
+          <button type="submit" class="btn btn-outline-danger btn-sm w-100"><i class="fa-solid fa-stop me-1"></i>End Interview</button>
+        </form>
+      </div>
+    </div>
+    {% if transcript %}
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-list me-2"></i>Previous Answers ({{ transcript|length }})</div>
+      <div class="card-glass-body">
+        {% for entry in transcript|slice:"-3:" %}
+        <div class="transcript-mini mb-2"><span class="text-muted small">Q: </span>{{ entry.question|truncatechars:60 }}<br><span class="text-muted small">A: </span><span class="text-truncate">{{ entry.answer|truncatechars:80 }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% else %}
+<!-- Start Session -->
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-play me-2" style="color:var(--success)"></i>Start a Mock Interview</div>
+      <div class="card-glass-body">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="start">
+          <div class="mb-4">
+            <label class="form-label">Select Job Role</label>
+            <select name="role_id" class="form-select">
+              <option value="">— General Interview —</option>
+              {% for role in job_roles %}<option value="{{ role.pk }}">{{ role.title }}</option>{% endfor %}
+            </select>
+          </div>
+          <ul class="tip-list mb-4 text-muted small">
+            <li>You'll be asked up to 10 questions</li>
+            <li>Answer in full sentences for best practice</li>
+            <li>Your transcript is saved for review</li>
+          </ul>
+          <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="fa-solid fa-microphone me-2"></i>Start Interview</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

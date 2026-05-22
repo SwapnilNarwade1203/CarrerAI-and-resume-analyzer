@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Company Questions – CareerAI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Company Interview Q&A</h1>
+  <p class="page-subtitle">Real interview questions from top companies. Crowd-sourced by the community.</p>
+</div>
+<div class="row g-4">
+  <div class="col-lg-4">
+    <!-- Filter -->
+    <div class="card-glass mb-4">
+      <div class="card-glass-header"><i class="fa-solid fa-filter me-2"></i>Filter by Company</div>
+      <div class="card-glass-body">
+        <form method="get">
+          <div class="input-group">
+            <input type="text" name="company" value="{{ company_filter }}" class="form-control" placeholder="e.g., Google">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i></button>
+          </div>
+        </form>
+        <div class="mt-3">
+          <a href="{% url 'company_questions' %}" class="company-pill {% if not company_filter %}active{% endif %}">All</a>
+          {% for co in companies|slice:":20" %}
+          <a href="?company={{ co }}" class="company-pill {% if company_filter == co %}active{% endif %}">{{ co }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <!-- Submit Question -->
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-plus-circle me-2" style="color:var(--success)"></i>Submit a Question</div>
+      <div class="card-glass-body">
+        <form method="post">
+          {% csrf_token %}
+          {% for field in submit_form %}
+          <div class="mb-3"><label class="form-label text-muted small">{{ field.label }}</label>{{ field }}</div>
+          {% endfor %}
+          <button type="submit" class="btn btn-success w-100"><i class="fa-solid fa-paper-plane me-1"></i>Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <h6 class="mb-3 text-muted">{{ questions|length }} question{{ questions|length|pluralize }} {% if company_filter %}from "{{ company_filter }}"{% endif %}</h6>
+    {% for q in questions %}
+    <div class="card-glass mb-3">
+      <div class="card-glass-body">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="company-badge">{{ q.company_name }}</span>
+          <span class="category-badge category-{{ q.category }}">{{ q.category }}</span>
+          <span class="text-muted small ms-auto">{{ q.job_role }}</span>
+        </div>
+        <p class="fw-500 mb-2">{{ q.question }}</p>
+        {% if q.answer_hints %}<div class="answer-box"><i class="fa-solid fa-lightbulb me-2" style="color:var(--warning)"></i>{{ q.answer_hints }}</div>{% endif %}
+        <div class="text-end mt-2"><span class="text-muted small">{{ q.created_at|date:"M d, Y" }}{% if q.submitted_by %} · by {{ q.submitted_by.username }}{% endif %}</span></div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state"><p>No questions yet {% if company_filter %}for "{{ company_filter }}"{% endif %}. Be the first to submit one!</p></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

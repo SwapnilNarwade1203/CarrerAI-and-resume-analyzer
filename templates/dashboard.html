@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard – CareerAI{% endblock %}
+{% block extra_head %}
+<style>
+.score-badge { font-size:3rem; font-weight:800; color:var(--primary); line-height:1; }
+.score-label-sm { font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Dashboard</h1>
+  <p class="page-subtitle">Welcome back, {{ user.get_full_name|default:user.username }}! Here's your career overview.</p>
+</div>
+
+<div class="row g-4">
+  <!-- LEFT PANEL -->
+  <div class="col-lg-4">
+
+    <!-- Upload Resume Card -->
+    <div class="card-glass mb-4">
+      <div class="card-glass-header">
+        <i class="fa-solid fa-upload me-2" style="color:var(--primary)"></i>Upload Resume
+      </div>
+      <div class="card-glass-body">
+        <form method="post" action="{% url 'upload_resume' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label text-muted small">Resume File (PDF/DOCX)</label>
+            <div class="upload-zone" id="uploadZone">
+              <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+              <p class="upload-text">Drag & drop or <strong>browse</strong></p>
+              <input type="file" name="resume_file" accept=".pdf,.docx" class="upload-input" required id="resumeFile">
+              <p class="upload-hint" id="fileName">Max 10MB · PDF or DOCX</p>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small">Target Job Role</label>
+            {{ upload_form.target_job_role }}
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fa-solid fa-magnifying-glass me-2"></i>Analyze Resume
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Career Goals -->
+    <div class="card-glass mb-4">
+      <div class="card-glass-header">
+        <i class="fa-solid fa-crosshairs me-2" style="color:var(--accent)"></i>Career Goals
+      </div>
+      <div class="card-glass-body">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="update_profile" value="1">
+          <div class="mb-3">
+            <label class="form-label text-muted small">Target Role</label>
+            {{ profile_form.target_job_role }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small">Career Goals</label>
+            {{ profile_form.career_goals }}
+          </div>
+          <button type="submit" class="btn btn-outline-primary btn-sm w-100">Save Goals</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Previous Resumes -->
+    {% if resumes %}
+    <div class="card-glass mb-4">
+      <div class="card-glass-header">
+        <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--warning)"></i>Previous Resumes
+      </div>
+      <div class="card-glass-body p-0">
+        {% for resume in resumes|slice:":5" %}
+        <a href="{% url 'analysis_detail' resume.pk %}" class="resume-item {% if forloop.first %}active{% endif %}">
+          <div class="resume-item-info">
+            <i class="fa-solid fa-file-pdf me-2"></i>
+            <span class="small">{{ resume.uploaded_at|date:"M d, Y" }}</span>
+          </div>
+          <span class="score-pill score-{{ resume.score|floatformat:0 }}">{{ resume.score }}%</span>
+        </a>
+        {% endfor %}
+        {% if resumes.count > 2 %}
+        <a href="{% url 'compare_resumes' %}" class="d-block text-center py-2 small link-primary">
+          Compare Resumes →
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Learning Plan -->
+    {% if learning_plan %}
+    <div class="card-glass mb-4">
+      <div class="card-glass-header">
+        <i class="fa-solid fa-book-open me-2" style="color:var(--success)"></i>Learning Plan
+      </div>
+      <div class="card-glass-body">
+        <p class="text-muted small mb-3">Top skills to master for your target role:</p>
+        {% for skill in learning_plan %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <a href="{% url 'skill_tracker_list' %}" class="skill-chip-link">{{ skill }}</a>
+          <a href="{% url 'skill_tracker_list' %}" class="btn btn-xs btn-primary">Track →</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /LEFT -->
+
+  <!-- RIGHT PANEL -->
+  <div class="col-lg-8">
+
+    <!-- Score Card -->
+    {% if latest_resume %}
+    <div class="card-glass mb-4">
+      <div class="card-glass-body">
+        <div class="row align-items-center">
+          <div class="col-auto text-center">
+            <div class="score-ring-lg" style="--score-pct:{{ latest_resume.score }}">
+              <span class="score-val-lg">{{ latest_resume.score|floatformat:0 }}<span style="font-size:1rem">%</span></span>
+            </div>
+            <div class="score-label-sm mt-1">Overall Score</div>
+          </div>
+          <div class="col">
+            <h5 class="mb-1">Resume Analysis Complete</h5>
+            <p class="text-muted small mb-3">Uploaded {{ latest_resume.uploaded_at|date:"M d, Y" }}</p>
+            <div class="row g-2">
+              <div class="col-6"><div class="mini-stat {% if latest_resume.experience_present %}stat-good{% else %}stat-bad{% endif %}"><i class="fa-solid {% if latest_resume.experience_present %}fa-check{% else %}fa-xmark{% endif %}"></i> Experience</div></div>
+              <div class="col-6"><div class="mini-stat {% if latest_resume.projects_present %}stat-good{% else %}stat-bad{% endif %}"><i class="fa-solid {% if latest_resume.projects_present %}fa-check{% else %}fa-xmark{% endif %}"></i> Projects</div></div>
+            </div>
+          </div>
+          <div class="col-auto">
+            <a href="{% url 'analysis_detail' latest_resume.pk %}" class="btn btn-primary">View Analysis <i class="fa-solid fa-arrow-right ms-1"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="card-glass mb-4">
+      <div class="card-glass-body text-center py-5">
+        <i class="fa-solid fa-file-arrow-up fa-3x mb-3" style="color:var(--primary);opacity:.5"></i>
+        <h5>Upload your first resume</h5>
+        <p class="text-muted">to see your skill analysis and personalized recommendations</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Skills Overview Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <!-- Matching Skills -->
+        <div class="card-glass h-100">
+          <div class="card-glass-header">
+            <i class="fa-solid fa-circle-check me-2" style="color:var(--success)"></i>Matched Skills
+            <span class="badge-pill ms-auto">{{ matching_skills|length }}</span>
+          </div>
+          <div class="card-glass-body">
+            {% if matching_skills %}
+              <div class="skills-cloud">
+                {% for skill in matching_skills %}
+                <span class="skill-tag skill-tag-green">{{ skill }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted small">Upload a resume and select a target role to see matched skills.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <!-- Missing Skills -->
+        <div class="card-glass h-100">
+          <div class="card-glass-header">
+            <i class="fa-solid fa-circle-xmark me-2" style="color:var(--danger)"></i>Skills to Learn
+            <span class="badge-pill ms-auto badge-danger">{{ missing_skills|length }}</span>
+          </div>
+          <div class="card-glass-body">
+            {% if missing_skills %}
+              <div class="skills-cloud">
+                {% for skill in missing_skills %}
+                <span class="skill-tag skill-tag-red">{{ skill }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              {% if matching_skills %}
+              <p class="text-success small"><i class="fa-solid fa-star me-1"></i>Excellent! You have all required skills.</p>
+              {% else %}
+              <p class="text-muted small">Select a target job role to see skill gaps.</p>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Radar Chart & Market Insight -->
+    {% if radar_labels %}
+    <div class="row g-3 mb-4">
+      <div class="col-md-7">
+        <div class="card-glass h-100">
+          <div class="card-glass-header"><i class="fa-solid fa-chart-pie me-2" style="color:var(--primary)"></i>Skill Radar</div>
+          <div class="card-glass-body d-flex align-items-center justify-content-center">
+            <canvas id="radarChart" style="max-height:220px"></canvas>
+          </div>
+        </div>
+      </div>
+      {% if market_insight %}
+      <div class="col-md-5">
+        <div class="card-glass h-100">
+          <div class="card-glass-header"><i class="fa-solid fa-chart-bar me-2" style="color:var(--accent)"></i>Market Insight</div>
+          <div class="card-glass-body">
+            <div class="insight-row"><span class="text-muted small">Salary Range</span><strong>${{ market_insight.average_salary_min|floatformat:0 }}K – ${{ market_insight.average_salary_max|floatformat:0 }}K</strong></div>
+            <div class="insight-row mt-2"><span class="text-muted small">Market Demand</span></div>
+            <div class="progress mt-1 mb-3" style="height:8px"><div class="progress-bar bg-accent" style="width:{{ market_insight.demand_score }}%"></div></div>
+            <div class="text-muted small mb-1">Top Employers:</div>
+            {% for emp in market_insight.top_employers|slice:":3" %}
+            <span class="badge bg-light text-dark me-1 mb-1">{{ emp }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Recommendations Tabs -->
+    {% if projects_rec or courses_rec or certs_rec %}
+    <div class="card-glass mb-4">
+      <div class="card-glass-header"><i class="fa-solid fa-lightbulb me-2" style="color:var(--warning)"></i>Recommendations</div>
+      <div class="card-glass-body">
+        <ul class="nav nav-tabs-custom" id="recTab">
+          <li><a href="#" class="rec-tab active" data-target="projects">🛠 Projects</a></li>
+          <li><a href="#" class="rec-tab" data-target="courses">📚 Courses</a></li>
+          <li><a href="#" class="rec-tab" data-target="certs">🎓 Certifications</a></li>
+        </ul>
+        <div id="projects" class="rec-panel active mt-3">
+          <div class="row g-3">
+            {% for p in projects_rec %}
+            <div class="col-md-6">
+              <div class="rec-card"><div class="rec-skill-badge">{{ p.skill }}</div><div class="rec-title"><i class="fa-solid fa-hammer me-1"></i>{{ p.project }}</div></div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="courses" class="rec-panel mt-3" style="display:none">
+          <div class="row g-3">
+            {% for c in courses_rec %}
+            <div class="col-md-6">
+              <a href="{{ c.url }}" target="_blank" class="rec-card rec-card-link">
+                <div class="rec-skill-badge">{{ c.skill }}</div>
+                <div class="rec-title"><i class="fa-solid fa-play-circle me-1"></i>{{ c.name }}</div>
+                <div class="rec-platform"><i class="fa-solid fa-external-link me-1"></i>{{ c.platform }}</div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="certs" class="rec-panel mt-3" style="display:none">
+          <div class="row g-3">
+            {% for cert in certs_rec %}
+            <div class="col-md-6">
+              <a href="{{ cert.url }}" target="_blank" class="rec-card rec-card-link">
+                <div class="rec-skill-badge">{{ cert.skill }}</div>
+                <div class="rec-title"><i class="fa-solid fa-certificate me-1"></i>{{ cert.name }}</div>
+                <div class="rec-platform">{{ cert.provider }}</div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tracked Skills Progress -->
+    {% if tracked_skills %}
+    <div class="card-glass">
+      <div class="card-glass-header"><i class="fa-solid fa-chart-line me-2" style="color:var(--primary)"></i>Your Skill Progress</div>
+      <div class="card-glass-body">
+        {% for sp in tracked_skills|slice:":6" %}
+        <div class="skill-progress-row mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <a href="{% url 'skill_tracker_detail' sp.skill.pk %}" class="skill-name-link">{{ sp.skill.name }}</a>
+            <span class="skill-level-badge">{{ sp.level }}%</span>
+          </div>
+          <div class="progress" style="height:6px"><div class="progress-bar progress-bar-animated" style="width:{{ sp.level }}%"></div></div>
+        </div>
+        {% endfor %}
+        <a href="{% url 'skill_tracker_list' %}" class="btn btn-outline-primary btn-sm w-100 mt-2">Manage All Skills →</a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /RIGHT -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Radar Chart
+{% if radar_labels %}
+const ctx = document.getElementById('radarChart');
+if(ctx){
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: {{ radar_labels|safe }},
+      datasets: [{
+        label: 'Your Profile',
+        data: {{ radar_scores|safe }},
+        backgroundColor: 'rgba(108,99,255,0.2)',
+        borderColor: 'rgba(108,99,255,1)',
+        borderWidth: 2,
+        pointBackgroundColor: '#6c63ff',
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { display: false },
+          grid: { color: 'rgba(255,255,255,0.1)' },
+          pointLabels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#ccc', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+{% endif %}
+
+// Recommendation tabs
+document.querySelectorAll('.rec-tab').forEach(tab => {
+  tab.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.querySelectorAll('.rec-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.rec-panel').forEach(p => p.style.display = 'none');
+    this.classList.add('active');
+    document.getElementById(this.dataset.target).style.display = 'block';
+  });
+});
+
+// File upload feedback
+const fileInput = document.getElementById('resumeFile');
+const fileNameEl = document.getElementById('fileName');
+if(fileInput && fileNameEl){
+  fileInput.addEventListener('change', function(){
+    fileNameEl.textContent = this.files[0] ? this.files[0].name : 'Max 10MB · PDF or DOCX';
+  });
+}
+
+// Drag & drop zone
+const uploadZone = document.getElementById('uploadZone');
+if(uploadZone){
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    if(e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; fileNameEl.textContent = e.dataTransfer.files[0].name; }
+  });
+}
+</script>
+{% endblock %}

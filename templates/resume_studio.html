@@ -1,0 +1,598 @@
+{% extends 'base.html' %}
+{% block title %}Resume Studio – CareerAI{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Hero ─────────────────────────────────────────── */
+.studio-hero {
+  display: flex; align-items: center; gap: 1.2rem;
+  padding: 1.5rem 1.8rem; border-radius: 14px; margin-bottom: 1.8rem;
+  background: linear-gradient(135deg,rgba(139,92,246,.15),rgba(59,130,246,.08),rgba(16,185,129,.06));
+  border: 1px solid rgba(139,92,246,.22);
+}
+.studio-hero .hero-icon {
+  width:52px;height:52px;flex-shrink:0;border-radius:13px;
+  background:linear-gradient(135deg,#7c3aed,#3b82f6);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.35rem;color:#fff;box-shadow:0 6px 18px rgba(124,58,237,.35);
+}
+.studio-hero h1{margin:0 0 .15rem;font-size:1.45rem;font-weight:800;}
+.studio-hero p{margin:0;font-size:.85rem;color:var(--text-muted);}
+
+/* ── Gallery ──────────────────────────────────────── */
+.tpl-card {
+  border-radius: 12px; cursor: pointer;
+  border: 2px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  padding: 1.1rem 1rem 1rem;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: .55rem;
+  transition: border-color .2s, transform .18s, box-shadow .2s;
+  height: 100%;
+}
+.tpl-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
+  border-color: rgba(139,92,246,.5);
+}
+.tpl-card.active {
+  border-color: var(--primary);
+  background: rgba(139,92,246,.08);
+  box-shadow: 0 0 0 3px rgba(139,92,246,.18);
+}
+.tpl-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; flex-shrink: 0;
+}
+.tpl-card strong { font-size: .82rem; font-weight: 700; color: var(--text-primary); }
+.tpl-card small  { font-size: .68rem; color: var(--text-muted); }
+.tpl-card .tpl-badge {
+  font-size: .6rem; font-weight: 700; padding: 2px 9px;
+  border-radius: 20px; letter-spacing: .04em;
+}
+
+/* ── Phase 2: Editor ──────────────────────────────── */
+.studio-topbar {
+  display:flex;align-items:center;gap:.7rem;
+  padding:.8rem 1.1rem;border-radius:11px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  margin-bottom:1.4rem;
+}
+.tpl-pill {
+  display:flex;align-items:center;gap:.45rem;
+  background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.28);
+  border-radius:20px;padding:.22rem .7rem;
+  font-size:.77rem;font-weight:600;color:var(--primary);
+}
+
+/* scrollable sticky form */
+.form-scroll {
+  max-height:calc(100vh - 90px);
+  overflow-y:auto;
+  position:sticky;top:12px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.1) transparent;
+}
+.form-scroll::-webkit-scrollbar{width:3px;}
+.form-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px;}
+
+.fs-label {
+  font-size:.64rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--primary);opacity:.85;
+  margin:1rem 0 .4rem;display:flex;align-items:center;gap:.4rem;
+}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;}
+.fg2 .fc{grid-column:1/-1;}
+
+/* inputs */
+.form-scroll .form-control,
+.form-scroll .form-label {
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  color:var(--text-primary);
+  border-radius:8px;font-size:.82rem;
+}
+.form-scroll .form-control:focus {
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(139,92,246,.18);
+  background:rgba(255,255,255,.07);
+}
+.form-scroll label.lbl{font-size:.73rem;color:var(--text-muted);margin-bottom:.28rem;display:block;}
+
+/* preview panel */
+.preview-sticky{position:sticky;top:12px;}
+.preview-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--success);
+  animation:pdot 2s infinite;display:inline-block;margin-right:.4rem;
+}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.65);}}
+
+#livePreview{width:100%;height:630px;border:none;background:#fff;display:block;}
+
+.action-row{display:flex;gap:.6rem;padding:.8rem 1rem;border-top:1px solid rgba(255,255,255,.07);}
+.action-row .btn{flex:1;font-size:.82rem;font-weight:600;}
+
+/* ATS modal */
+#atsModal .modal-content{background:var(--card-bg);border:1px solid rgba(255,255,255,.1);}
+#atsContent{
+  background:#0a0a0a;color:#e5e7eb;
+  font-family:'Courier New',monospace;font-size:.78rem;
+  padding:1.2rem 1.5rem;margin:0;white-space:pre-wrap;
+  max-height:52vh;overflow-y:auto;line-height:1.75;
+  border-radius:0 0 .4rem .4rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<div class="studio-hero">
+  <div class="hero-icon"><i class="fa-solid fa-id-card"></i></div>
+  <div>
+    <h1>Resume Studio</h1>
+    <p>Pick a template below — fill your details — get a live visual resume and ATS plain text instantly.</p>
+  </div>
+  <div class="ms-auto d-flex gap-2 flex-shrink-0">
+    <span class="badge px-3 py-2" style="background:rgba(139,92,246,.13);color:var(--primary);border:1px solid rgba(139,92,246,.28);font-size:.71rem">
+      <i class="fa-solid fa-swatchbook me-1"></i>10 Templates
+    </span>
+    <span class="badge px-3 py-2" style="background:rgba(16,185,129,.1);color:var(--success);border:1px solid rgba(16,185,129,.22);font-size:.71rem">
+      <i class="fa-solid fa-bolt me-1"></i>Live Preview
+    </span>
+  </div>
+</div>
+
+<!-- ══════════ PHASE 1: GALLERY ══════════ -->
+<div id="phase1">
+  <p class="text-muted mb-3" style="font-size:.82rem">
+    <i class="fa-solid fa-hand-pointer me-1" style="color:var(--primary)"></i>
+    Click a template to open the editor with a live side-by-side preview.
+  </p>
+  <div class="row g-3" id="galleryGrid"></div>
+</div>
+
+<!-- ══════════ PHASE 2: EDITOR ══════════ -->
+<div id="phase2" style="display:none">
+
+  <!-- Top bar -->
+  <div class="studio-topbar">
+    <button class="btn btn-outline-secondary btn-sm py-1 px-3" onclick="backToGallery()">
+      <i class="fa-solid fa-arrow-left me-1"></i>Templates
+    </button>
+    <div class="tpl-pill"><i class="fa-solid fa-palette"></i><span id="activeTplName">—</span></div>
+    <button class="btn btn-outline-primary btn-sm py-1 px-3 ms-auto" onclick="backToGallery()">
+      <i class="fa-solid fa-grid-2 me-1"></i>Change
+    </button>
+  </div>
+
+  <div class="row g-4 align-items-start">
+
+    <!-- FORM (left) -->
+    <div class="col-lg-5">
+      <div class="form-scroll">
+
+        <!-- Personal -->
+        <div class="card-glass mb-3">
+          <div class="card-glass-header">
+            <i class="fa-solid fa-circle-user me-2" style="color:var(--primary)"></i>Personal Information
+          </div>
+          <div class="card-glass-body">
+            <div class="fg2">
+              <div><label class="lbl">Full Name *</label><input id="f_name" class="form-control" placeholder="e.g. Priya Sharma" oninput="updatePreview()"></div>
+              <div><label class="lbl">Job Title</label><input id="f_title" class="form-control" placeholder="Software Engineer" oninput="updatePreview()"></div>
+              <div><label class="lbl">Email *</label><input id="f_email" type="email" class="form-control" placeholder="priya@email.com" oninput="updatePreview()"></div>
+              <div><label class="lbl">Phone</label><input id="f_phone" class="form-control" placeholder="+91 98765 43210" oninput="updatePreview()"></div>
+              <div><label class="lbl">LinkedIn</label><input id="f_linkedin" class="form-control" placeholder="linkedin.com/in/..." oninput="updatePreview()"></div>
+              <div><label class="lbl">GitHub / Portfolio</label><input id="f_github" class="form-control" placeholder="github.com/..." oninput="updatePreview()"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="card-glass">
+          <div class="card-glass-header">
+            <i class="fa-solid fa-file-lines me-2" style="color:var(--amber)"></i>Resume Content
+          </div>
+          <div class="card-glass-body">
+            <div class="fs-label"><i class="fa-solid fa-quote-left" style="opacity:.55"></i>Professional Summary</div>
+            <textarea id="f_summary" class="form-control" rows="3" placeholder="2–3 impactful lines about your experience and goals..." oninput="updatePreview()"></textarea>
+
+            <div class="fs-label"><i class="fa-solid fa-code" style="opacity:.55"></i>Skills</div>
+            <textarea id="f_skills" class="form-control" rows="2" placeholder="Python · Django · React · SQL · AWS · Docker..." oninput="updatePreview()"></textarea>
+
+            <div class="fs-label"><i class="fa-solid fa-briefcase" style="opacity:.55"></i>Experience</div>
+            <textarea id="f_experience" class="form-control" rows="6"
+              placeholder="Software Engineer | Google | 2022–Present&#10;• Built REST APIs serving 10M+ requests/day&#10;• Reduced load time by 40% via caching" oninput="updatePreview()"></textarea>
+
+            <div class="fs-label"><i class="fa-solid fa-graduation-cap" style="opacity:.55"></i>Education</div>
+            <textarea id="f_education" class="form-control" rows="2" placeholder="B.Tech CS | IIT Delhi | 2018–2022 · CGPA 8.9" oninput="updatePreview()"></textarea>
+
+            <div class="fs-label"><i class="fa-solid fa-diagram-project" style="opacity:.55"></i>Projects <small class="text-muted fw-normal" style="text-transform:none;letter-spacing:0">(optional)</small></div>
+            <textarea id="f_projects" class="form-control" rows="3"
+              placeholder="CareerAI | Python, Django&#10;• Built ATS scorer with 90%+ accuracy" oninput="updatePreview()"></textarea>
+
+            <div class="fs-label"><i class="fa-solid fa-certificate" style="opacity:.55"></i>Certifications <small class="text-muted fw-normal" style="text-transform:none;letter-spacing:0">(optional)</small></div>
+            <textarea id="f_certifications" class="form-control" rows="2" placeholder="AWS Solutions Architect | Amazon | 2023" oninput="updatePreview()"></textarea>
+          </div>
+        </div>
+
+      </div><!-- /form-scroll -->
+    </div>
+
+    <!-- LIVE PREVIEW (right) -->
+    <div class="col-lg-7">
+      <div class="preview-sticky">
+        <div class="card-glass">
+          <div class="card-glass-header">
+            <i class="fa-solid fa-eye me-2" style="color:var(--success)"></i>Live Preview
+            <span class="ms-auto" style="font-size:.72rem;color:var(--success)">
+              <span class="preview-dot"></span>Auto-updating as you type
+            </span>
+          </div>
+          <iframe id="livePreview" title="Resume Preview"></iframe>
+          <div class="action-row">
+            <button class="btn btn-primary" onclick="printResume()">
+              <i class="fa-solid fa-print me-2"></i>Print / Save PDF
+            </button>
+            <button class="btn btn-outline-secondary" onclick="showATS()">
+              <i class="fa-solid fa-robot me-2"></i>ATS Text
+            </button>
+          </div>
+        </div>
+        <div class="mt-2 px-3 py-2 rounded-3 d-flex gap-2 align-items-start" style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.18);font-size:.76rem;color:var(--text-muted)">
+          <i class="fa-solid fa-lightbulb mt-1 flex-shrink-0" style="color:var(--amber)"></i>
+          <span><strong style="color:var(--text-primary)">Print tip:</strong> Set margins to <em>None</em> and enable <em>Background graphics</em> for best output.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /phase2 -->
+
+<!-- ATS MODAL -->
+<div class="modal fade" id="atsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,.08)">
+        <span class="modal-title fw-bold" style="font-size:.92rem">
+          <i class="fa-solid fa-robot me-2" style="color:var(--success)"></i>ATS Plain Text
+        </span>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="px-3 pt-3 pb-0" style="font-size:.75rem;color:var(--text-muted)">
+        <i class="fa-solid fa-circle-info me-1"></i>Paste this into job portals (Naukri, LinkedIn, Workday). No tables — ATS-friendly.
+      </div>
+      <div class="modal-body p-0 mt-3"><pre id="atsContent"></pre></div>
+      <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,.08)">
+        <button class="btn btn-success btn-sm" onclick="copyATS()"><i class="fa-solid fa-copy me-1"></i>Copy</button>
+        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ══ Mini helper renderers ══════════════════════════════════ */
+function mg(names,color='#374151',center=false){
+  return names.map(n=>`<div style="margin-bottom:3.5px">
+    <div style="font-size:4.5px;font-weight:700;text-transform:uppercase;color:${color};margin-bottom:1.5px${center?';text-align:center':''}">${n}</div>
+    <div style="height:3px;background:#e5e7eb;border-radius:2px;margin-bottom:1.5px"></div>
+    <div style="height:3px;background:#e5e7eb;border-radius:2px;width:72%${center?';margin:0 auto':''}"></div>
+  </div>`).join('');
+}
+function mb(c,n){return Array.from({length:n},()=>`<div style="height:3px;background:${c};border-radius:2px;margin-bottom:3px;opacity:.45"></div>`).join('');}
+function mbd(n){return Array.from({length:n},()=>`<div style="height:3px;background:#7c3aed;border-radius:2px;margin-bottom:4px;opacity:.32"></div>`).join('');}
+
+/* ══ Full-template section factory ════════════════════════ */
+function ci(d,sep=' &nbsp;·&nbsp; '){return[d.em,d.ph,d.li,d.gi].filter(Boolean).join(sep);}
+// Classic
+function s(t,b){if(!b)return'';return`<div style="margin-bottom:.9rem"><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#333;border-bottom:1px solid #ccc;padding-bottom:.2rem;margin-bottom:.35rem">${t}</div><div style="font-size:.82rem;white-space:pre-wrap;line-height:1.65">${b}</div></div>`;}
+// Professional sidebar
+function ps(t,b){if(!b)return'';return`<div style="margin-bottom:.95rem"><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:#1e293b;border-bottom:2px solid #7c3aed;padding-bottom:.12rem;margin-bottom:.35rem">${t}</div><div style="font-size:.8rem;white-space:pre-wrap;line-height:1.6;color:#374151">${b}</div></div>`;}
+// Creative
+function cr(t,b){if(!b)return'';return`<div style="margin-bottom:.95rem"><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:#7c3aed;margin-bottom:.3rem;display:flex;align-items:center;gap:.45rem">${t}<span style="flex:1;height:1px;background:linear-gradient(to right,#7c3aed44,transparent)"></span></div><div style="font-size:.82rem;white-space:pre-wrap;line-height:1.65;color:#374151">${b}</div></div>`;}
+// Two-col
+function col2(t,c,b){if(!b)return'';return`<div style="margin-bottom:.85rem"><div style="font-size:.67rem;font-weight:700;text-transform:uppercase;color:${c};border-bottom:2px solid ${c};padding-bottom:.12rem;margin-bottom:.3rem">${t}</div><div style="font-size:.78rem;white-space:pre-wrap;line-height:1.55;color:#374151">${b}</div></div>`;}
+// Executive
+function ex(t,b){if(!b)return'';return`<div style="margin-bottom:1.1rem"><div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:#b45309;text-align:center;margin-bottom:.28rem">${t}</div><div style="width:36px;height:1px;background:#b45309;margin:0 auto .35rem"></div><div style="font-size:.82rem;white-space:pre-wrap;line-height:1.65;color:#374151">${b}</div></div>`;}
+// Tech dark
+function td(t,b){if(!b)return'';return`<div style="margin-bottom:.95rem"><div style="font-size:.72rem;font-weight:700;color:#7c3aed;margin-bottom:.28rem">&gt; ${t}.info</div><div style="font-size:.78rem;white-space:pre-wrap;line-height:1.6;color:#cbd5e1;padding-left:.9rem;border-left:2px solid #1e3a5f">${b}</div></div>`;}
+// Elegant
+function el(t,b){if(!b)return'';return`<div style="margin-bottom:.95rem"><div style="font-size:.67rem;font-weight:300;text-transform:uppercase;letter-spacing:.2em;color:#9ca3af;text-align:center;margin-bottom:.28rem">${t}</div><div style="width:26px;height:1px;background:#e5e7eb;margin:0 auto .35rem"></div><div style="font-size:.8rem;white-space:pre-wrap;line-height:1.65;color:#374151">${b}</div></div>`;}
+// Bold accent
+function ac(t,b){if(!b)return'';return`<div style="margin-bottom:.95rem"><div style="font-size:.7rem;font-weight:900;text-transform:uppercase;color:#f59e0b;margin-bottom:.28rem;letter-spacing:.07em">${t}</div><div style="font-size:.82rem;white-space:pre-wrap;line-height:1.65;color:#374151">${b}</div></div>`;}
+// Corporate blue
+function bl(t,c,b){if(!b)return'';return`<div style="margin-bottom:.85rem"><div style="font-size:.67rem;font-weight:700;text-transform:uppercase;color:${c};border-left:3px solid ${c};padding-left:.4rem;margin-bottom:.28rem">${t}</div><div style="font-size:.78rem;white-space:pre-wrap;line-height:1.6;color:#374151">${b}</div></div>`;}
+// Compact
+function cm(t,c,b){if(!b)return'';return`<div style="margin-bottom:.85rem"><div style="font-size:.67rem;font-weight:700;text-transform:uppercase;color:${c};margin-bottom:.22rem;display:flex;align-items:center;gap:.3rem"><span style="width:6px;height:6px;border-radius:50%;background:${c};flex-shrink:0"></span>${t}</div><div style="font-size:.78rem;white-space:pre-wrap;line-height:1.55;color:#374151">${b}</div></div>`;}
+
+/* ══ Templates ═════════════════════════════════════════════ */
+const TEMPLATES = [
+  { id:'classic', name:'Classic Minimal', sub:'Serif · ATS-safe', badge:'Popular', icon:'fa-file-lines', bg:'#6b7280',
+    mini:`<div style="padding:10px 12px;font-family:Georgia,serif">
+      <div style="border-bottom:2px solid #222;padding-bottom:3px;margin-bottom:5px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">John Doe</div>
+        <div style="font-size:5px;color:#555;margin-top:1px">john@email.com · +91 98765 · linkedin.com/in/john</div>
+      </div>${mg(['Summary','Skills','Experience','Education'])}</div>`,
+    html:d=>`<div style="padding:2.4rem 2.8rem;font-family:Georgia,serif;color:#1a1a1a;max-width:800px;margin:0 auto;box-sizing:border-box">
+      <div style="border-bottom:2.5px solid #1a1a1a;padding-bottom:.4rem;margin-bottom:.3rem">
+        <h1 style="margin:0;font-size:1.9rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em">${d.n||'Your Name'}</h1>
+        ${d.t?`<div style="font-size:.88rem;color:#555;margin-top:.12rem">${d.t}</div>`:''}
+      </div>
+      <div style="font-size:.76rem;color:#444;margin-bottom:1.2rem">${ci(d)}</div>
+      ${s('PROFESSIONAL SUMMARY',d.su)}${s('SKILLS',d.sk)}${s('EXPERIENCE',d.ex)}${s('EDUCATION',d.ed)}${d.pr?s('PROJECTS',d.pr):''}${d.ce?s('CERTIFICATIONS',d.ce):''}
+    </div>`},
+
+  { id:'pro_sidebar', name:'Professional', sub:'Dark Sidebar', badge:'Best', icon:'fa-table-columns', bg:'#7c3aed',
+    mini:`<div style="display:flex;height:130px">
+      <div style="width:37%;background:#1e293b;padding:9px 7px">
+        <div style="font-size:9px;font-weight:700;color:#fff;margin-bottom:2px">John Doe</div>
+        <div style="font-size:5px;color:#94a3b8;margin-bottom:6px">Software Eng.</div>
+        ${mb('#7c3aed',4)}</div>
+      <div style="flex:1;padding:8px 7px">${mg(['Summary','Experience','Education'])}</div>
+    </div>`,
+    html:d=>`<div style="display:flex;min-height:100vh;font-family:Segoe UI,sans-serif">
+      <div style="width:30%;background:#1e293b;color:#fff;padding:2rem 1.4rem;box-sizing:border-box;flex-shrink:0">
+        <h2 style="margin:0 0 .12rem;font-size:1.2rem;font-weight:700">${d.n||'Your Name'}</h2>
+        ${d.t?`<div style="font-size:.77rem;color:#94a3b8;margin-bottom:.9rem">${d.t}</div>`:'<div style="margin-bottom:.9rem"></div>'}
+        <div style="font-size:.59rem;font-weight:700;color:#7c3aed;text-transform:uppercase;margin-bottom:.22rem">Contact</div>
+        <div style="font-size:.7rem;color:#cbd5e1;line-height:1.7">${[d.em,d.ph,d.li,d.gi].filter(Boolean).join('<br>')}</div>
+        ${d.sk?`<div style="font-size:.59rem;font-weight:700;color:#7c3aed;text-transform:uppercase;margin:1rem 0 .22rem">Skills</div><div style="font-size:.7rem;color:#cbd5e1;white-space:pre-wrap">${d.sk}</div>`:''}
+        ${d.ce?`<div style="font-size:.59rem;font-weight:700;color:#7c3aed;text-transform:uppercase;margin:1rem 0 .22rem">Certifications</div><div style="font-size:.7rem;color:#cbd5e1;white-space:pre-wrap">${d.ce}</div>`:''}
+      </div>
+      <div style="flex:1;padding:2rem 1.8rem;box-sizing:border-box;color:#1a1a1a">
+        ${ps('Summary',d.su)}${ps('Experience',d.ex)}${ps('Education',d.ed)}${d.pr?ps('Projects',d.pr):''}
+      </div>
+    </div>`},
+
+  { id:'creative', name:'Creative', sub:'Gradient Header', badge:'', icon:'fa-wand-magic-sparkles', bg:'#8b5cf6',
+    mini:`<div>
+      <div style="background:linear-gradient(135deg,#7c3aed,#2563eb);padding:10px;color:#fff">
+        <div style="font-size:10px;font-weight:800">John Doe</div>
+        <div style="font-size:5px;opacity:.8;margin-top:1px">Software Engineer · john@email.com</div>
+      </div>
+      <div style="padding:6px 10px">${mg(['Summary','Skills','Experience'],'#7c3aed')}</div>
+    </div>`,
+    html:d=>`<div style="font-family:Segoe UI,sans-serif;color:#111;min-height:100vh">
+      <div style="background:linear-gradient(135deg,#7c3aed 0%,#2563eb 100%);color:#fff;padding:2.2rem 2.8rem">
+        <h1 style="margin:0 0 .18rem;font-size:2rem;font-weight:800">${d.n||'Your Name'}</h1>
+        ${d.t?`<div style="font-size:.87rem;opacity:.85;margin-bottom:.35rem">${d.t}</div>`:''}
+        <div style="font-size:.76rem;opacity:.78">${ci(d)}</div>
+      </div>
+      <div style="padding:1.8rem 2.8rem">
+        ${cr('Summary',d.su)}${cr('Skills',d.sk)}${cr('Experience',d.ex)}${cr('Education',d.ed)}${d.pr?cr('Projects',d.pr):''}${d.ce?cr('Certifications',d.ce):''}
+      </div>
+    </div>`},
+
+  { id:'two_col', name:'Two-Column', sub:'Split Layout', badge:'', icon:'fa-columns', bg:'#2563eb',
+    mini:`<div style="padding:7px 10px">
+      <div style="text-align:center;border-bottom:2px solid #2563eb;padding-bottom:3px;margin-bottom:5px">
+        <div style="font-size:9px;font-weight:800;color:#111">John Doe</div>
+        <div style="font-size:5px;color:#2563eb">Software Engineer</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <div>${mg(['Summary','Skills'],'#2563eb')}</div>
+        <div>${mg(['Experience','Education'],'#2563eb')}</div>
+      </div>
+    </div>`,
+    html:d=>`<div style="font-family:Segoe UI,sans-serif;padding:2.2rem 2.8rem;color:#1a1a1a;box-sizing:border-box">
+      <div style="text-align:center;border-bottom:3px solid #2563eb;padding-bottom:.55rem;margin-bottom:1.3rem">
+        <h1 style="margin:0;font-size:1.8rem;font-weight:800;color:#111">${d.n||'Your Name'}</h1>
+        ${d.t?`<div style="color:#2563eb;font-size:.84rem;font-weight:600">${d.t}</div>`:''}
+        <div style="font-size:.74rem;color:#555;margin-top:.18rem">${ci(d)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:3fr 2fr;gap:2rem">
+        <div>${col2('Experience','#2563eb',d.ex)}${col2('Education','#2563eb',d.ed)}${d.pr?col2('Projects','#2563eb',d.pr):''}</div>
+        <div>${col2('Summary','#2563eb',d.su)}${col2('Skills','#2563eb',d.sk)}${d.ce?col2('Certifications','#2563eb',d.ce):''}</div>
+      </div>
+    </div>`},
+
+  { id:'executive', name:'Executive', sub:'Centred · Gold', badge:'', icon:'fa-crown', bg:'#b45309',
+    mini:`<div style="padding:9px 14px;text-align:center">
+      <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#111;border-bottom:1px solid #ccc;padding-bottom:3px">JOHN DOE</div>
+      <div style="font-size:4.5px;color:#b45309;margin-bottom:5px">Senior Engineer</div>
+      ${mg(['Summary','Experience','Education'],'#b45309',true)}
+    </div>`,
+    html:d=>`<div style="font-family:Garamond,Georgia,serif;padding:2.8rem 3.5rem;color:#1a1a1a;max-width:820px;margin:0 auto;box-sizing:border-box">
+      <div style="text-align:center;margin-bottom:1.4rem">
+        <h1 style="margin:0;font-size:2.1rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase">${d.n||'Your Name'}</h1>
+        ${d.t?`<div style="font-size:.88rem;color:#b45309;font-style:italic;margin:.22rem 0">${d.t}</div>`:''}
+        <div style="width:56px;height:2px;background:#b45309;margin:.45rem auto"></div>
+        <div style="font-size:.77rem;color:#555">${ci(d)}</div>
+      </div>
+      ${ex('Professional Summary',d.su)}${ex('Experience',d.ex)}${ex('Education',d.ed)}${ex('Skills',d.sk)}${d.pr?ex('Projects',d.pr):''}${d.ce?ex('Certifications',d.ce):''}
+    </div>`},
+
+  { id:'tech_dark', name:'Tech Dark', sub:'Dark · Dev-Focused', badge:'', icon:'fa-terminal', bg:'#7c3aed',
+    mini:`<div style="background:#0f172a;height:130px;padding:10px">
+      <div style="font-size:9.5px;font-weight:700;color:#7c3aed;font-family:monospace">$ john_doe</div>
+      <div style="font-size:5px;color:#64748b;font-family:monospace;margin-bottom:6px">software_engineer</div>
+      ${mbd(4)}
+    </div>`,
+    html:d=>`<div style="background:#0f172a;color:#e2e8f0;font-family:'Courier New',monospace;min-height:100vh;padding:2.2rem 2.8rem;box-sizing:border-box">
+      <div style="border-left:4px solid #7c3aed;padding-left:1.2rem;margin-bottom:1.8rem">
+        <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:#7c3aed">$ ${d.n||'your_name'}</h1>
+        ${d.t?`<div style="color:#94a3b8;font-size:.8rem;margin-top:.1rem"># ${d.t}</div>`:''}
+        <div style="font-size:.71rem;color:#475569;margin-top:.3rem">${ci(d,' | ')}</div>
+      </div>
+      ${td('about',d.su)}${td('skills',d.sk)}${td('experience',d.ex)}${td('education',d.ed)}${d.pr?td('projects',d.pr):''}${d.ce?td('certifications',d.ce):''}
+    </div>`},
+
+  { id:'elegant', name:'Elegant', sub:'Ultra-thin · Centred', badge:'', icon:'fa-feather', bg:'#9ca3af',
+    mini:`<div style="padding:9px 12px;text-align:center">
+      <div style="font-size:9px;font-weight:200;letter-spacing:.25em;text-transform:uppercase;color:#1a1a1a">JOHN  DOE</div>
+      <div style="width:28px;height:1px;background:#d1d5db;margin:4px auto"></div>
+      <div style="font-size:4.5px;color:#9ca3af;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px">Software Engineer</div>
+      ${mg(['Summary','Skills','Experience'],'#9ca3af',true)}
+    </div>`,
+    html:d=>`<div style="font-family:'Segoe UI',sans-serif;padding:3rem 4rem;color:#374151;max-width:800px;margin:0 auto;box-sizing:border-box">
+      <div style="text-align:center;margin-bottom:2rem">
+        <h1 style="margin:0;font-size:2.2rem;font-weight:200;letter-spacing:.25em;text-transform:uppercase;color:#111">${d.n||'Your Name'}</h1>
+        ${d.t?`<div style="font-size:.81rem;font-weight:300;color:#6b7280;letter-spacing:.15em;text-transform:uppercase;margin:.3rem 0">${d.t}</div>`:''}
+        <div style="width:48px;height:1px;background:#d1d5db;margin:.55rem auto"></div>
+        <div style="font-size:.74rem;color:#9ca3af">${ci(d)}</div>
+      </div>
+      ${el('Summary',d.su)}${el('Skills',d.sk)}${el('Experience',d.ex)}${el('Education',d.ed)}${d.pr?el('Projects',d.pr):''}${d.ce?el('Certifications',d.ce):''}
+    </div>`},
+
+  { id:'bold_accent', name:'Bold Accent', sub:'Amber Stripe · Heavy', badge:'', icon:'fa-bolt', bg:'#f59e0b',
+    mini:`<div style="display:flex;height:130px">
+      <div style="width:6px;background:linear-gradient(to bottom,#f59e0b,#ef4444)"></div>
+      <div style="flex:1;padding:9px 10px">
+        <div style="font-size:9.5px;font-weight:900;text-transform:uppercase;color:#111">JOHN DOE</div>
+        <div style="font-size:5px;color:#f59e0b;font-weight:600;margin-bottom:5px">Software Engineer</div>
+        ${mg(['Summary','Skills','Experience'],'#f59e0b')}
+      </div>
+    </div>`,
+    html:d=>`<div style="display:flex;font-family:Segoe UI,sans-serif;min-height:100vh">
+      <div style="width:9px;background:linear-gradient(to bottom,#f59e0b,#ef4444);flex-shrink:0"></div>
+      <div style="flex:1;padding:2.2rem 2.8rem;color:#1a1a1a;box-sizing:border-box">
+        <div style="margin-bottom:1.5rem">
+          <h1 style="margin:0;font-size:2rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em">${d.n||'YOUR NAME'}</h1>
+          ${d.t?`<div style="font-size:.87rem;font-weight:700;color:#f59e0b;margin:.18rem 0">${d.t}</div>`:''}
+          <div style="font-size:.76rem;color:#555;margin-top:.28rem">${ci(d)}</div>
+        </div>
+        ${ac('Summary',d.su)}${ac('Skills',d.sk)}${ac('Experience',d.ex)}${ac('Education',d.ed)}${d.pr?ac('Projects',d.pr):''}${d.ce?ac('Certifications',d.ce):''}
+      </div>
+    </div>`},
+
+  { id:'corporate_blue', name:'Corporate Blue', sub:'Blue Header · Formal', badge:'', icon:'fa-building', bg:'#1d4ed8',
+    mini:`<div>
+      <div style="background:#1d4ed8;padding:9px 10px;color:#fff">
+        <div style="font-size:9px;font-weight:700">John Doe</div>
+        <div style="font-size:4.5px;opacity:.8;margin-top:1px">Software Engineer · john@email.com</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr">
+        <div style="padding:5px 7px;border-right:1px solid #e5e7eb">${mg(['Summary','Experience'],'#1d4ed8')}</div>
+        <div style="padding:5px 6px">${mg(['Skills','Education'],'#1d4ed8')}</div>
+      </div>
+    </div>`,
+    html:d=>`<div style="font-family:Arial,sans-serif;color:#111;min-height:100vh">
+      <div style="background:#1d4ed8;color:#fff;padding:2rem 2.8rem">
+        <h1 style="margin:0;font-size:1.9rem;font-weight:700">${d.n||'Your Name'}</h1>
+        ${d.t?`<div style="font-size:.84rem;opacity:.85;margin:.18rem 0">${d.t}</div>`:''}
+        <div style="font-size:.75rem;opacity:.74;margin-top:.28rem">${ci(d)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr">
+        <div style="padding:1.8rem 2rem;border-right:1px solid #e5e7eb">
+          ${bl('Summary','#1d4ed8',d.su)}${bl('Experience','#1d4ed8',d.ex)}${bl('Education','#1d4ed8',d.ed)}${d.pr?bl('Projects','#1d4ed8',d.pr):''}
+        </div>
+        <div style="padding:1.8rem 1.5rem;background:#f8fafc">
+          ${bl('Skills','#1d4ed8',d.sk)}${d.ce?bl('Certifications','#1d4ed8',d.ce):''}
+        </div>
+      </div>
+    </div>`},
+
+  { id:'compact', name:'Compact Modern', sub:'Avatar · Green', badge:'New', icon:'fa-leaf', bg:'#10b981',
+    mini:`<div style="padding:8px 10px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;border-bottom:1.5px solid #10b981;padding-bottom:4px">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700;flex-shrink:0">J</div>
+        <div>
+          <div style="font-size:8px;font-weight:800;color:#111">John Doe</div>
+          <div style="font-size:4px;color:#10b981;font-weight:600">Software Engineer</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:3fr 2fr;gap:5px">
+        <div>${mg(['Summary','Experience'],'#10b981')}</div>
+        <div>${mg(['Skills','Education'],'#10b981')}</div>
+      </div>
+    </div>`,
+    html:d=>`<div style="font-family:Segoe UI,sans-serif;padding:2rem 2.5rem;color:#1a1a1a;min-height:100vh;box-sizing:border-box">
+      <div style="display:flex;align-items:center;gap:1.2rem;border-bottom:2px solid #10b981;padding-bottom:1rem;margin-bottom:1.5rem">
+        <div style="width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,#10b981,#3b82f6);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.55rem;font-weight:800">${(d.n||'?')[0].toUpperCase()}</div>
+        <div>
+          <h1 style="margin:0;font-size:1.65rem;font-weight:800">${d.n||'Your Name'}</h1>
+          ${d.t?`<div style="font-size:.84rem;color:#10b981;font-weight:600">${d.t}</div>`:''}
+          <div style="font-size:.72rem;color:#555;margin-top:.18rem">${ci(d)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:3fr 2fr;gap:2rem">
+        <div>${cm('Summary','#10b981',d.su)}${cm('Experience','#10b981',d.ex)}${cm('Education','#10b981',d.ed)}${d.pr?cm('Projects','#10b981',d.pr):''}</div>
+        <div>${cm('Skills','#10b981',d.sk)}${d.ce?cm('Certifications','#10b981',d.ce):''}</div>
+      </div>
+    </div>`},
+];
+
+/* ══ State ═════════════════════════════════════════════════ */
+let activeTemplate = null;
+
+/* ══ Gallery render ════════════════════════════════════════ */
+function renderGallery() {
+  const g = document.getElementById('galleryGrid');
+  g.innerHTML = TEMPLATES.map(t => `
+    <div class="col-6 col-sm-4 col-md-3">
+      <div class="tpl-card${activeTemplate?.id===t.id?' active':''}" id="card_${t.id}" onclick="selectTemplate('${t.id}')">
+        <div class="tpl-icon" style="background:${t.bg}1a;color:${t.bg}">
+          <i class="fa-solid ${t.icon}"></i>
+        </div>
+        <strong>${t.name}</strong>
+        <small>${t.sub}</small>
+        ${t.badge ? `<span class="tpl-badge badge" style="background:${t.bg}22;color:${t.bg};border:1px solid ${t.bg}44">${t.badge}</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+/* ══ Select ════════════════════════════════════════════════ */
+function selectTemplate(id) {
+  activeTemplate = TEMPLATES.find(t => t.id === id);
+  document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('card_' + id)?.classList.add('active');
+  document.getElementById('activeTplName').textContent = activeTemplate.name;
+  document.getElementById('phase1').style.display = 'none';
+  document.getElementById('phase2').style.display = 'block';
+  updatePreview();
+}
+
+function backToGallery() {
+  document.getElementById('phase1').style.display = 'block';
+  document.getElementById('phase2').style.display = 'none';
+}
+
+/* ══ Live Preview ══════════════════════════════════════════ */
+function fd() {
+  const g = id => document.getElementById(id)?.value?.trim() || '';
+  return { n:g('f_name'), t:g('f_title'), em:g('f_email'), ph:g('f_phone'),
+           li:g('f_linkedin'), gi:g('f_github'), su:g('f_summary'), sk:g('f_skills'),
+           ex:g('f_experience'), ed:g('f_education'), pr:g('f_projects'), ce:g('f_certifications') };
+}
+
+function updatePreview() {
+  if (!activeTemplate) return;
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;font-size:16px;background:#fff">${activeTemplate.html(fd())}</body></html>`;
+  document.getElementById('livePreview').srcdoc = html;
+}
+
+function printResume() {
+  const f = document.getElementById('livePreview');
+  f.contentWindow.focus();
+  f.contentWindow.print();
+}
+
+/* ══ ATS ═══════════════════════════════════════════════════ */
+function showATS() {
+  const d = fd();
+  const L = [];
+  L.push((d.n || '').toUpperCase());
+  L.push([d.em, d.ph, d.li, d.gi].filter(Boolean).join(' | '));
+  L.push('');
+  [['PROFESSIONAL SUMMARY', d.su], ['SKILLS', d.sk], ['EXPERIENCE', d.ex],
+   ['EDUCATION', d.ed], ['PROJECTS', d.pr], ['CERTIFICATIONS', d.ce]].forEach(([label, val]) => {
+    if (val) { L.push(label); L.push('-'.repeat(40)); L.push(val); L.push(''); }
+  });
+  document.getElementById('atsContent').textContent = L.join('\n');
+  new bootstrap.Modal(document.getElementById('atsModal')).show();
+}
+function copyATS() {
+  navigator.clipboard.writeText(document.getElementById('atsContent').textContent);
+}
+
+/* ══ Init ══════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', renderGallery);
+</script>
+{% endblock %}

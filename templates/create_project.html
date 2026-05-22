@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Project Builder – CareerAI{% endblock %}
+
+{% block extra_css %}
+<style>
+.idea-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.idea-card::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--warning); opacity: 0; transition: opacity 0.2s ease;
+}
+.idea-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.idea-card:hover::before { opacity: 1; }
+.idea-title {
+  font-size: .88rem; font-weight: 700; color: var(--text-primary);
+  margin-bottom: .25rem; display: flex; justify-content: space-between; align-items: flex-start;
+}
+.idea-desc {
+  font-size: .76rem; color: var(--text-muted); margin-bottom: .6rem; line-height: 1.45;
+}
+.idea-tags {
+  display: flex; gap: .35rem; flex-wrap: wrap;
+}
+.idea-tag {
+  font-size: .62rem; padding: 2px 7px; border-radius: 4px; font-weight: 600;
+  background: rgba(255, 255, 255, 0.07); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.idea-tag.primary { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.25); }
+.idea-tag.success { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.25); }
+.idea-tag.warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.25); }
+.idea-tag.danger  { background: rgba(239, 68, 68, 0.15);  color: #f87171; border-color: rgba(239, 68, 68, 0.25); }
+
+/* scrollable columns for large screens */
+@media (min-width: 992px) {
+  .scroll-col {
+    height: calc(100vh - 160px);
+    overflow-y: auto;
+    padding-right: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.1) transparent;
+  }
+  .scroll-col::-webkit-scrollbar { width: 4px; }
+  .scroll-col::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 4px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h1 class="page-title"><i class="fa-solid fa-hammer me-2 text-primary"></i>Project Builder</h1>
+    <p class="page-subtitle">Log your projects, fill skill gaps, and explore real-world ideas for your portfolio.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- FORM COLUMN -->
+  <div class="col-lg-4 scroll-col">
+    <div class="card-glass position-relative" style="z-index: 10;">
+      <div class="card-glass-header" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <i class="fa-solid fa-plus-circle me-2 text-success"></i>New Project
+      </div>
+      <div class="card-glass-body pt-3">
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold text-uppercase" style="font-size:.65rem;letter-spacing:.05em;">{{ field.label }} {% if field.field.required %}*{% endif %}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="text-danger mt-1" style="font-size: .7rem;"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ field.errors|striptags }}</div>
+            {% endif %}
+            {% if field.help_text %}
+            <div class="text-muted mt-1" style="font-size: .65rem;">{{ field.help_text }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" style="border-radius: 8px; font-size: .85rem;">
+            <i class="fa-solid fa-rocket me-2"></i>Save Project
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- YOUR PROJECTS COLUMN -->
+  <div class="col-lg-4 scroll-col">
+    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.08)!important;">
+      <h5 class="mb-0 text-white" style="font-size: .95rem; font-weight: 700;">
+        <i class="fa-solid fa-boxes-stacked me-2 text-info"></i>Your Projects
+      </h5>
+      <span class="badge bg-secondary bg-opacity-25 text-light px-2 py-1 rounded-pill" style="font-size:.7rem;">{{ user_projects|length }} Logged</span>
+    </div>
+
+    {% for project in user_projects %}
+    <a href="{% url 'project_detail' project.pk %}" class="project-card mb-3 d-block text-decoration-none" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1rem; transition: all 0.2s ease;">
+      <div class="d-flex justify-content-between align-items-start">
+        <div style="width: calc(100% - 70px);">
+          <h6 class="mb-1 text-white fw-bold" style="font-size: .9rem;">{{ project.title }}</h6>
+          <p class="text-muted small mb-2" style="font-size: .75rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            {{ project.description }}
+          </p>
+          <div class="d-flex flex-wrap gap-1 mt-2">
+            {% for skill in project.skills_used.all|slice:":3" %}
+            <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 fw-normal" style="font-size:.65rem;">{{ skill.name }}</span>
+            {% endfor %}
+            {% if project.skills_used.count > 3 %}
+            <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 fw-normal" style="font-size:.65rem;">+{{ project.skills_used.count|add:"-3" }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="width: 65px; text-align: right;">
+          <span class="badge bg-{% if project.status == 'Planning' %}secondary{% elif project.status == 'In Progress' %}warning{% else %}success{% endif %} bg-opacity-25 text-{% if project.status == 'Planning' %}light{% elif project.status == 'In Progress' %}warning{% else %}success{% endif %} border border-{% if project.status == 'Planning' %}secondary{% elif project.status == 'In Progress' %}warning{% else %}success{% endif %} border-opacity-25 fw-bold d-block w-100 text-center py-1 mb-2" style="font-size:.62rem;">
+            {{ project.get_status_display }}
+          </span>
+          {% if project.github_repo_url %}
+          <i class="fa-brands fa-github text-muted" title="GitHub Repo Added"></i>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+      <div class="empty-icon bg-secondary bg-opacity-25 text-secondary p-4 rounded-circle mb-3 d-inline-block">
+        <i class="fa-solid fa-box-open fa-2x"></i>
+      </div>
+      <h6 class="text-white">No projects logged</h6>
+      <p class="text-muted small mb-0">Fill out the form to add your first project.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- PROJECT IDEAS COLUMN -->
+  <div class="col-lg-4 scroll-col">
+    <div class="d-flex align-items-center mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.08)!important;">
+      <h5 class="mb-0" style="font-size: .95rem; font-weight: 700; color: #fbbf24;">
+        <i class="fa-solid fa-lightbulb me-2"></i>Real-World Ideas
+      </h5>
+    </div>
+
+    <ul class="list-unstyled ps-0 ms-0 mt-3" style="font-size: .85rem; color: var(--text-muted); line-height: 1.6;">
+      <li class="mb-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="fa-solid fa-check text-primary mt-1"></i>
+          <div><strong class="text-white">AI Mock Interview AI:</strong> Use speech-to-text to conduct voice interviews and stream feedback using an LLM. <br><span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 mt-1" style="font-size:.65rem">Python • Django/FastAPI • OpenAI API</span></div>
+        </div>
+      </li>
+      <li class="mb-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="fa-solid fa-check text-success mt-1"></i>
+          <div><strong class="text-white">Real-time Chat App:</strong> A WhatsApp clone with real-time sockets, read receipts, and online presence indicators. <br><span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 mt-1" style="font-size:.65rem">React • Node.js • WebSockets • Redis</span></div>
+        </div>
+      </li>
+      <li class="mb-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="fa-solid fa-check text-danger mt-1"></i>
+          <div><strong class="text-white">E-Commerce Microservices:</strong> Product catalog, cart, and payment gateway decoupled into scalable microservices. <br><span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 mt-1" style="font-size:.65rem">Docker • Stripe API • PostgreSQL</span></div>
+        </div>
+      </li>
+      <li class="mb-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="fa-solid fa-check text-warning mt-1"></i>
+          <div><strong class="text-white">Cryptocurrency Tracker:</strong> Live dashboard charting top crypto prices using candlestick graphs. <br><span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25 mt-1" style="font-size:.65rem">Vue/React • Chart.js • REST API</span></div>
+        </div>
+      </li>
+      <li class="mb-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="fa-solid fa-check text-info mt-1"></i>
+          <div><strong class="text-white">Kanban Task SaaS:</strong> A Trello-like board with drag-and-drop tasks, sorting, and assignments. <br><span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25 mt-1" style="font-size:.65rem">JWT Auth • Typescript • MongoDB</span></div>
+        </div>
+      </li>
+      <li class="mb-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="fa-solid fa-check text-secondary mt-1"></i>
+          <div><strong class="text-white">Video Processing Pipeline:</strong> Upload a video, compress it, generate a thumbnail, and extract audio. <br><span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 mt-1" style="font-size:.65rem">Python • Celery • FFmpeg</span></div>
+        </div>
+      </li>
+    </ul>
+
+  </div>
+
+</div>
+
+<!-- Auto-apply styling to generated form inputs -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if(!el.classList.contains('form-control') && !el.classList.contains('form-select')) {
+      if(el.tagName === 'SELECT') {
+        el.classList.add('form-select');
+        el.style.backgroundColor = 'rgba(255,255,255,0.05)';
+        el.style.borderColor = 'rgba(255,255,255,0.1)';
+        el.style.color = '#fff';
+      } else {
+        el.classList.add('form-control');
+        el.style.backgroundColor = 'rgba(255,255,255,0.05)';
+        el.style.borderColor = 'rgba(255,255,255,0.1)';
+        el.style.color = '#fff';
+      }
+    }
+  });
+
+  // Multiselect tag fixes
+  document.querySelectorAll('select[multiple]').forEach(select => {
+    select.style.height = '120px';
+  });
+});
+</script>
+{% endblock %}

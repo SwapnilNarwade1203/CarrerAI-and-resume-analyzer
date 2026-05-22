@@ -1,0 +1,58 @@
+{
+  "Python": [
+    {"step": 1, "title": "Python Basics", "description": "Variables, data types, control flow, functions.", "duration": "1 week", "resources": ["https://python.org/doc", "https://www.learnpython.org"], "interview_tips": "Know built-in types, mutability, and common built-in functions."},
+    {"step": 2, "title": "OOP in Python", "description": "Classes, inheritance, encapsulation, polymorphism.", "duration": "1 week", "resources": ["https://realpython.com/python3-object-oriented-programming/"], "interview_tips": "Explain dunder methods, class vs instance variables."},
+    {"step": 3, "title": "Python Standard Library", "description": "os, sys, re, json, datetime, collections, itertools.", "duration": "1 week", "resources": ["https://docs.python.org/3/library/"], "interview_tips": "Know common modules and when to use them."},
+    {"step": 4, "title": "File Handling & Error Handling", "description": "Reading/writing files, try/except, custom exceptions.", "duration": "3 days", "resources": ["https://realpython.com/read-write-files-python/"], "interview_tips": "Know context managers (with statement) and exception hierarchy."},
+    {"step": 5, "title": "Decorators & Generators", "description": "Writing decorators, generator functions, yield.", "duration": "1 week", "resources": ["https://realpython.com/primer-on-python-decorators/"], "interview_tips": "Explain @property, @staticmethod, @classmethod."},
+    {"step": 6, "title": "Async Python", "description": "asyncio, async/await, concurrency.", "duration": "1 week", "resources": ["https://realpython.com/async-io-python/"], "interview_tips": "Know difference between threading, multiprocessing, asyncio."},
+    {"step": 7, "title": "Build a Python Project", "description": "Create a CLI tool, web scraper, or automation script.", "duration": "1 week", "resources": ["https://github.com/topics/python-project"], "interview_tips": "Be ready to demo a project and explain your design choices."}
+  ],
+  "Django": [
+    {"step": 1, "title": "Django Setup & Structure", "description": "Install Django, create project/app, understand MTV pattern.", "duration": "3 days", "resources": ["https://docs.djangoproject.com/en/stable/intro/tutorial01/"], "interview_tips": "Explain MTV vs MVC, Django's request-response cycle."},
+    {"step": 2, "title": "Models & ORM", "description": "Define models, relationships, migrations, querysets.", "duration": "1 week", "resources": ["https://docs.djangoproject.com/en/stable/topics/db/models/"], "interview_tips": "Know select_related vs prefetch_related, N+1 problem."},
+    {"step": 3, "title": "Views & URL Routing", "description": "Function-based views, class-based views, URL patterns.", "duration": "1 week", "resources": ["https://docs.djangoproject.com/en/stable/topics/http/views/"], "interview_tips": "Know when to use CBVs vs FBVs."},
+    {"step": 4, "title": "Templates & Forms", "description": "Template language, forms, model forms, validation.", "duration": "1 week", "resources": ["https://docs.djangoproject.com/en/stable/topics/forms/"], "interview_tips": "Explain CSRF protection and form validation flow."},
+    {"step": 5, "title": "Authentication & Permissions", "description": "Django auth, login/logout, decorators, groups.", "duration": "4 days", "resources": ["https://docs.djangoproject.com/en/stable/topics/auth/"], "interview_tips": "Know @login_required, permission_classes, custom user model."},
+    {"step": 6, "title": "REST APIs with Django REST Framework", "description": "Serializers, viewsets, routers, authentication.", "duration": "1 week", "resources": ["https://www.django-rest-framework.org/"], "interview_tips": "Explain serializers, authentication methods (JWT, Token)."},
+    {"step": 7, "title": "Deploy Django App", "description": "Gunicorn, Nginx, PostgreSQL, environment variables, WhiteNoise.", "duration": "1 week", "resources": ["https://docs.djangoproject.com/en/stable/howto/deployment/"], "interview_tips": "Know DEBUG=False implications, static file serving in production."}
+  ],
+  "JavaScript": [
+    {"step": 1, "title": "JS Fundamentals", "description": "Variables, types, operators, control flow.", "duration": "1 week", "resources": ["https://javascript.info/"], "interview_tips": "Know var/let/const differences, hoisting, type coercion."},
+    {"step": 2, "title": "Functions & Scope", "description": "Closures, callbacks, arrow functions, IIFE.", "duration": "1 week", "resources": ["https://javascript.info/closure"], "interview_tips": "Explain closure, this keyword, call/apply/bind."},
+    {"step": 3, "title": "DOM Manipulation", "description": "querySelector, event listeners, classList, data attributes.", "duration": "1 week", "resources": ["https://javascript.info/dom-nodes"], "interview_tips": "Know event delegation, propagation, bubbling."},
+    {"step": 4, "title": "Asynchronous JavaScript", "description": "Callbacks, Promises, async/await, fetch API.", "duration": "1 week", "resources": ["https://javascript.info/async"], "interview_tips": "Explain Promise chain vs async/await, error handling."},
+    {"step": 5, "title": "ES6+ Features", "description": "Destructuring, spread, modules, classes, template literals.", "duration": "4 days", "resources": ["https://es6.io/"], "interview_tips": "Know all major ES6+ syntax and when to use them."},
+    {"step": 6, "title": "Build a JS Project", "description": "Create a todo app, weather app, or quiz game.", "duration": "1 week", "resources": ["https://javascript30.com/"], "interview_tips": "Be ready to explain your code architecture."}
+  ],
+  "Machine Learning": [
+    {"step": 1, "title": "Math Foundations", "description": "Linear algebra, statistics, probability, calculus basics.", "duration": "2 weeks", "resources": ["https://www.khanacademy.org/math"], "interview_tips": "Know matrix operations, probability distributions, Bayes theorem."},
+    {"step": 2, "title": "Python for ML", "description": "NumPy, Pandas, Matplotlib, Seaborn.", "duration": "1 week", "resources": ["https://numpy.org/doc/", "https://pandas.pydata.org/docs/"], "interview_tips": "Know vectorization, DataFrame operations, data visualization."},
+    {"step": 3, "title": "Supervised Learning", "description": "Linear regression, logistic regression, decision trees, SVMs.", "duration": "2 weeks", "resources": ["https://scikit-learn.org/stable/"], "interview_tips": "Explain bias-variance tradeoff, regularization, evaluation metrics."},
+    {"step": 4, "title": "Unsupervised Learning", "description": "K-Means, PCA, DBSCAN, hierarchical clustering.", "duration": "1 week", "resources": ["https://scikit-learn.org/stable/unsupervised_learning.html"], "interview_tips": "Know when to use each algorithm and how to select k."},
+    {"step": 5, "title": "Deep Learning", "description": "Neural networks, CNNs, RNNs, backpropagation.", "duration": "3 weeks", "resources": ["https://www.deeplearning.ai/"], "interview_tips": "Explain activation functions, optimizers, batch normalization."},
+    {"step": 6, "title": "Model Deployment", "description": "Flask/FastAPI, Docker, cloud deployment, monitoring.", "duration": "1 week", "resources": ["https://docs.aws.amazon.com/sagemaker/"], "interview_tips": "Know how to serve models, handle drift, and monitor performance."}
+  ],
+  "SQL": [
+    {"step": 1, "title": "SQL Basics", "description": "SELECT, INSERT, UPDATE, DELETE, WHERE, ORDER BY.", "duration": "4 days", "resources": ["https://www.w3schools.com/sql/"], "interview_tips": "Know all basic CRUD operations and filtering."},
+    {"step": 2, "title": "Joins & Relationships", "description": "INNER, LEFT, RIGHT, FULL OUTER JOIN, self-joins.", "duration": "1 week", "resources": ["https://www.sqlzoo.net/"], "interview_tips": "Draw diagrams, explain JOIN types and when to use each."},
+    {"step": 3, "title": "Aggregations & Grouping", "description": "GROUP BY, HAVING, COUNT, SUM, AVG, MIN, MAX.", "duration": "3 days", "resources": ["https://mode.com/sql-tutorial/"], "interview_tips": "Difference between WHERE and HAVING."},
+    {"step": 4, "title": "Subqueries & CTEs", "description": "Correlated subqueries, WITH clauses, window functions.", "duration": "1 week", "resources": ["https://www.postgresql.org/docs/current/tutorial.html"], "interview_tips": "Know ROW_NUMBER, RANK, PARTITION BY, LAG/LEAD."},
+    {"step": 5, "title": "Indexing & Optimization", "description": "Indexes, query plans, EXPLAIN, performance tuning.", "duration": "1 week", "resources": ["https://use-the-index-luke.com/"], "interview_tips": "Know when indexes help/hurt, composite indexes, covering indexes."},
+    {"step": 6, "title": "Practice SQL", "description": "Solve 50+ problems on LeetCode and HackerRank.", "duration": "2 weeks", "resources": ["https://leetcode.com/problemset/database/", "https://www.hackerrank.com/domains/sql"], "interview_tips": "Practice medium-hard problems, focus on window functions."}
+  ],
+  "React": [
+    {"step": 1, "title": "React Basics", "description": "JSX, components, props, state with useState.", "duration": "1 week", "resources": ["https://react.dev/learn"], "interview_tips": "Know functional vs class components, one-way data flow."},
+    {"step": 2, "title": "Hooks", "description": "useState, useEffect, useContext, custom hooks.", "duration": "1 week", "resources": ["https://react.dev/reference/react"], "interview_tips": "Explain useEffect dependencies array and cleanup."},
+    {"step": 3, "title": "Component Patterns", "description": "Lifting state, composition, controlled components, portals.", "duration": "1 week", "resources": ["https://react.dev/learn/thinking-in-react"], "interview_tips": "Explain controlled vs uncontrolled inputs."},
+    {"step": 4, "title": "React Router", "description": "Client-side routing, Route, Link, useNavigate, useParams.", "duration": "3 days", "resources": ["https://reactrouter.com/en/main"], "interview_tips": "Know nested routes, protected routes, lazy loading."},
+    {"step": 5, "title": "State Management", "description": "Context API, Redux Toolkit, Zustand.", "duration": "1 week", "resources": ["https://redux-toolkit.js.org/"], "interview_tips": "Know when to use local state vs global state."},
+    {"step": 6, "title": "Build & Deploy a React App", "description": "Vite, performance optimization, deployment to Vercel/Netlify.", "duration": "1 week", "resources": ["https://vitejs.dev/"], "interview_tips": "Know React.memo, useMemo, useCallback for optimization."}
+  ],
+  "default": [
+    {"step": 1, "title": "Learn the Fundamentals", "description": "Study the core concepts and syntax.", "duration": "1 week", "resources": ["https://www.youtube.com", "https://www.coursera.org"], "interview_tips": "Focus on commonly tested fundamentals."},
+    {"step": 2, "title": "Apply with Practice Problems", "description": "Solve exercises and small challenges.", "duration": "1 week", "resources": ["https://leetcode.com", "https://www.hackerrank.com"], "interview_tips": "Practice timed problem solving."},
+    {"step": 3, "title": "Build a Project", "description": "Create a small real-world project using this skill.", "duration": "1-2 weeks", "resources": ["https://github.com"], "interview_tips": "Have a project you can demo and explain."},
+    {"step": 4, "title": "Study Advanced Topics", "description": "Deepen your knowledge with advanced patterns.", "duration": "1-2 weeks", "resources": ["https://www.udemy.com"], "interview_tips": "Be ready for deep-dive questions."}
+  ]
+}

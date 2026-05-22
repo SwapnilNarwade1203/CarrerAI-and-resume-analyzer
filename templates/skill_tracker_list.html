@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Skill Tracker – CareerAI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Skill Tracker</h1>
+  <p class="page-subtitle">Track your progress and follow personalized roadmaps.</p>
+</div>
+<div class="row g-4">
+  <!-- Tracked Skills -->
+  <div class="col-lg-8">
+    {% if tracked %}
+    <h5 class="mb-3 text-muted"><i class="fa-solid fa-bookmark me-2"></i>Currently Tracking ({{ tracked.count }})</h5>
+    <div class="row g-3 mb-5">
+      {% for sp in tracked %}
+      <div class="col-md-6">
+        <a href="{% url 'skill_tracker_detail' sp.skill.pk %}" class="skill-tracker-card">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="skill-name fw-600">{{ sp.skill.name }}</span>
+            <span class="level-badge">{{ sp.level }}%</span>
+          </div>
+          <div class="progress" style="height:8px"><div class="progress-bar progress-bar-animated" style="width:{{ sp.level }}%" role="progressbar"></div></div>
+          <div class="d-flex justify-content-between mt-2">
+            <span class="text-muted small">Test: <strong>{{ sp.test_score|floatformat:0 }}%</strong></span>
+            <span class="text-muted small">{{ sp.completed_steps|length }}/{{ sp.roadmap|length }} steps</span>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state mb-4"><i class="fa-solid fa-chart-line fa-3x mb-3" style="opacity:.3"></i><p>You haven't tracked any skills yet. Add a skill below to get started!</p></div>
+    {% endif %}
+
+    <!-- All Skills -->
+    <h5 class="mb-3 text-muted"><i class="fa-solid fa-list-check me-2"></i>All Available Skills</h5>
+    <div class="skills-grid">
+      {% for skill in all_skills %}
+      <form method="post" class="d-inline">
+        {% csrf_token %}
+        <input type="hidden" name="skill_id" value="{{ skill.pk }}">
+        {% if skill.pk in tracked_ids %}
+        <input type="hidden" name="action" value="untrack">
+        <button type="submit" class="skill-pill skill-pill-tracked" title="Click to untrack">{{ skill.name }} <i class="fa-solid fa-xmark ms-1 small"></i></button>
+        {% else %}
+        <input type="hidden" name="action" value="track">
+        <button type="submit" class="skill-pill skill-pill-untracked">{{ skill.name }} <i class="fa-solid fa-plus ms-1 small"></i></button>
+        {% endif %}
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+  <!-- Stats -->
+  <div class="col-lg-4">
+    <div class="card-glass sticky-top" style="top:80px">
+      <div class="card-glass-header"><i class="fa-solid fa-chart-bar me-2" style="color:var(--primary)"></i>Your Stats</div>
+      <div class="card-glass-body">
+        <div class="stat-box"><span class="stat-box-num">{{ tracked.count }}</span><span class="stat-box-label">Skills Tracked</span></div>
+        <div class="stat-box mt-2"><span class="stat-box-num">{% if tracked %}{{ tracked|length }}{% else %}0{% endif %}</span><span class="stat-box-label">In Progress</span></div>
+        <div class="stat-box mt-2"><span class="stat-box-num">{% for sp in tracked %}{% if sp.level == 100 %}1{% endif %}{% endfor %}</span><span class="stat-box-label">Mastered</span></div>
+        <a href="{% url 'leaderboard' %}" class="btn btn-outline-primary btn-sm w-100 mt-3"><i class="fa-solid fa-ranking-star me-1"></i>View Leaderboard</a>
+        <a href="{% url 'achievements' %}" class="btn btn-outline-primary btn-sm w-100 mt-2"><i class="fa-solid fa-trophy me-1"></i>View Achievements</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

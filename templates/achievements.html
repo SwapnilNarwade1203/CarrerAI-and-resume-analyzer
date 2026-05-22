@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Achievements – CareerAI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="fa-solid fa-trophy me-2" style="color:var(--amber)"></i>Achievements</h1>
+  <p class="page-subtitle">Collect badges by levelling up your skills and completing challenges.</p>
+</div>
+
+<!-- Progress Summary -->
+<div class="ach-progress-banner mb-4">
+  <div class="ach-prog-left">
+    <div class="ach-prog-ring">
+      <svg viewBox="0 0 64 64" class="ach-ring-svg">
+        <circle cx="32" cy="32" r="26" fill="none" stroke="var(--surface2)" stroke-width="6"/>
+        <circle cx="32" cy="32" r="26" fill="none" stroke="var(--amber)" stroke-width="6"
+          stroke-dasharray="{{ user_achievements|length|default:0 }} {{ all_achievements|length|default:9 }}"
+          stroke-dashoffset="0"
+          stroke-linecap="round"
+          transform="rotate(-90 32 32)"
+          style="stroke-dasharray: calc({{ user_achievements|length }} / {{ all_achievements|length }} * 163.36) 163.36"/>
+      </svg>
+      <div class="ach-ring-label">
+        <span class="ach-ring-earned">{{ user_achievements|length }}</span>
+        <span class="ach-ring-total">/ {{ all_achievements|length }}</span>
+      </div>
+    </div>
+    <div>
+      <div class="ach-prog-title">Achievements Earned</div>
+      <div class="ach-prog-sub">{{ user_achievements|length }} of {{ all_achievements|length }} unlocked</div>
+      <div class="ach-prog-bar mt-2">
+        <div class="ach-prog-fill" style="width:{% widthratio user_achievements|length all_achievements|length 100 %}%"></div>
+      </div>
+    </div>
+  </div>
+  <div class="ach-prog-right">
+    <div class="ach-stat">
+      <i class="fa-solid fa-lock-open" style="color:var(--green)"></i>
+      <div>
+        <div class="ach-stat-num">{{ user_achievements|length }}</div>
+        <div class="ach-stat-label">Unlocked</div>
+      </div>
+    </div>
+    <div class="ach-stat">
+      <i class="fa-solid fa-lock" style="color:var(--text-muted)"></i>
+      <div>
+        <div class="ach-stat-num">{{ all_achievements|length }}</div>
+        <div class="ach-stat-label">Total</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Achievement Grid -->
+<div class="ach-grid">
+  {% for a in all_achievements %}
+  {% if a.pk in earned_ids %}
+  <div class="ach-card ach-earned">
+    <div class="ach-glow"></div>
+    <div class="ach-card-icon earned">
+      <i class="fa-solid {{ a.icon }}"></i>
+    </div>
+    <div class="ach-card-body">
+      <h6 class="ach-card-name">{{ a.name }}</h6>
+      <p class="ach-card-desc">{{ a.description }}</p>
+      <div class="ach-earned-badge">
+        <i class="fa-solid fa-check-circle me-1"></i>Earned
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="ach-card ach-locked">
+    <div class="ach-card-icon locked">
+      <i class="fa-solid {{ a.icon }}"></i>
+    </div>
+    <div class="ach-card-body">
+      <h6 class="ach-card-name">{{ a.name }}</h6>
+      <p class="ach-card-desc">{{ a.description }}</p>
+      <div class="ach-locked-badge">
+        <i class="fa-solid fa-lock me-1"></i>Locked
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Animate progress bars on load
+document.querySelectorAll('.ach-prog-fill').forEach(el => {
+  const w = el.style.width;
+  el.style.width = '0%';
+  setTimeout(() => { el.style.width = w; }, 100);
+});
+document.querySelectorAll('.lb-progress-fill').forEach(el => {
+  const w = el.style.width;
+  el.style.width = '0%';
+  setTimeout(() => { el.style.width = w; }, 200);
+});
+</script>
+{% endblock %}

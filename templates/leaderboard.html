@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Leaderboard – CareerAI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="fa-solid fa-ranking-star me-2" style="color:var(--amber)"></i>Leaderboard</h1>
+  <p class="page-subtitle">See how you rank against other learners worldwide.</p>
+</div>
+
+<!-- Your Rank Banner -->
+{% if user_rank %}
+<div class="rank-banner mb-4">
+  <div class="rank-banner-inner">
+    <div class="rank-banner-left">
+      <i class="fa-solid fa-medal" style="font-size:2rem;color:var(--amber)"></i>
+      <div>
+        <div class="rank-banner-label">Your Current Rank</div>
+        <div class="rank-banner-num">#{{ user_rank }}</div>
+      </div>
+    </div>
+    <div class="rank-banner-right">
+      <span class="rank-banner-badge">Keep learning to climb the ranks! 🚀</span>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <!-- Sidebar Filter -->
+  <div class="col-lg-3">
+    <div class="lb-filter-card">
+      <div class="lb-filter-header">
+        <i class="fa-solid fa-sliders me-2"></i>Filter by Skill
+      </div>
+      <div class="lb-filter-body">
+        <a href="{% url 'leaderboard' %}" class="lb-filter-link {% if not selected_skill %}active{% endif %}">
+          <i class="fa-solid fa-globe me-2"></i>Overall Ranking
+        </a>
+        {% for skill in all_skills %}
+        <a href="{% url 'leaderboard' %}?skill={{ skill.pk }}" class="lb-filter-link {% if selected_skill and selected_skill.pk == skill.pk %}active{% endif %}">
+          <i class="fa-solid fa-code me-2"></i>{{ skill.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Table -->
+  <div class="col-lg-9">
+    <!-- Top 3 Podium -->
+    {% if rankings|length >= 3 %}
+    <div class="podium-wrap mb-4">
+      {% for entry in rankings|slice:":3" %}
+      <div class="podium-item podium-{{ forloop.counter }}">
+        <div class="podium-avatar">
+          {% if is_overall %}{{ entry.user__username|first|upper }}{% else %}{{ entry.user.username|first|upper }}{% endif %}
+        </div>
+        <div class="podium-medal">
+          {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+        </div>
+        <div class="podium-name">
+          {% if is_overall %}{{ entry.user__first_name|default:entry.user__username }}{% else %}{{ entry.user.get_full_name|default:entry.user.username }}{% endif %}
+        </div>
+        <div class="podium-score">
+          {% if is_overall %}{{ entry.avg_level|floatformat:0 }}%{% else %}{{ entry.level }}%{% endif %}
+        </div>
+        <div class="podium-block podium-block-{{ forloop.counter }}">
+          <span class="podium-rank-num">#{{ forloop.counter }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Full Table -->
+    <div class="lb-card">
+      <div class="lb-card-header">
+        <i class="fa-solid fa-trophy me-2" style="color:var(--amber)"></i>
+        {% if selected_skill %}{{ selected_skill.name }} Leaderboard{% else %}Overall Leaderboard{% endif %}
+        <span class="lb-count-badge ms-auto">{{ rankings|length }} users</span>
+      </div>
+      <div class="lb-table">
+        <div class="lb-thead">
+          <span class="lbt-rank">Rank</span>
+          <span class="lbt-user">Player</span>
+          <span class="lbt-bar">Progress</span>
+          <span class="lbt-score">Score</span>
+          {% if is_overall %}<span class="lbt-extra">Skills</span>{% endif %}
+        </div>
+        {% for entry in rankings %}
+        <div class="lb-row {% if forloop.counter <= 3 %}lb-row-top lb-row-top-{{ forloop.counter }}{% endif %} {% if entry.user == request.user or entry.user__username == request.user.username %}lb-row-me{% endif %}">
+          <span class="lbt-rank">
+            {% if forloop.counter == 1 %}<span class="lb-medal lb-gold">🥇</span>
+            {% elif forloop.counter == 2 %}<span class="lb-medal lb-silver">🥈</span>
+            {% elif forloop.counter == 3 %}<span class="lb-medal lb-bronze">🥉</span>
+            {% else %}<span class="lb-num">#{{ forloop.counter }}</span>{% endif %}
+          </span>
+          <span class="lbt-user">
+            <div class="lb-avatar">
+              {% if is_overall %}{{ entry.user__username|first|upper }}{% else %}{{ entry.user.username|first|upper }}{% endif %}
+            </div>
+            <div class="lb-user-info">
+              <strong>{% if is_overall %}{{ entry.user__first_name }} {{ entry.user__last_name }}{% else %}{{ entry.user.get_full_name|default:entry.user.username }}{% endif %}</strong>
+              <small>@{% if is_overall %}{{ entry.user__username }}{% else %}{{ entry.user.username }}{% endif %}</small>
+            </div>
+          </span>
+          <span class="lbt-bar">
+            <div class="lb-progress">
+              <div class="lb-progress-fill" style="width:{% if is_overall %}{{ entry.avg_level|floatformat:0 }}{% else %}{{ entry.level }}{% endif %}%"></div>
+            </div>
+          </span>
+          <span class="lbt-score">
+            <strong>{% if is_overall %}{{ entry.avg_level|floatformat:0 }}{% else %}{{ entry.level }}{% endif %}%</strong>
+          </span>
+          {% if is_overall %}<span class="lbt-extra"><span class="skill-count-pill">{{ entry.skill_count }} skills</span></span>{% endif %}
+        </div>
+        {% empty %}
+        <div class="lb-empty">
+          <i class="fa-solid fa-users-slash"></i>
+          <p>No rankings yet. Start tracking skills to appear here!</p>
+          <a href="{% url 'skill_tracker_list' %}" class="btn btn-primary btn-sm mt-2">Track a Skill</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

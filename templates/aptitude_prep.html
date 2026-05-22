@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% block title %}Aptitude Practice – CareerAI{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1 class="page-title"><i class="fa-solid fa-brain me-2" style="color:var(--amber)"></i>Aptitude Practice</h1>
+  <p class="page-subtitle">Sharpen your quantitative, logical, and verbal reasoning skills — topic by topic.</p>
+</div>
+
+<div class="row g-4">
+  <!-- ── Main Topic Grid ─────────────────────────── -->
+  <div class="col-lg-8">
+
+    <!-- Hero Info Bar -->
+    <div class="apt-info-bar mb-4">
+      <div class="apt-info-item">
+        <i class="fa-solid fa-layer-group"></i>
+        <div>
+          <div class="apt-info-val">{{ topics|length }}</div>
+          <div class="apt-info-label">Topics</div>
+        </div>
+      </div>
+      <div class="apt-info-sep"></div>
+      <div class="apt-info-item">
+        <i class="fa-solid fa-circle-question"></i>
+        <div>
+          <div class="apt-info-val">{% for t in topics %}{% if forloop.last %}{{ t.q_count }}+{% endif %}{% endfor %}</div>
+          <div class="apt-info-label">Questions</div>
+        </div>
+      </div>
+      <div class="apt-info-sep"></div>
+      <div class="apt-info-item">
+        <i class="fa-solid fa-clock"></i>
+        <div>
+          <div class="apt-info-val">15 min</div>
+          <div class="apt-info-label">Per Quiz</div>
+        </div>
+      </div>
+      <div class="apt-info-sep"></div>
+      <div class="apt-info-item">
+        <i class="fa-solid fa-trophy"></i>
+        <div>
+          <div class="apt-info-val">MCQ</div>
+          <div class="apt-info-label">Format</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topics Grid -->
+    <h2 class="apt-section-title mb-3"><i class="fa-solid fa-list-check me-2"></i>Choose a Topic</h2>
+    <div class="apt-topic-grid">
+      {% for topic in topics %}
+      {% if 'Quant' in topic.name or 'Math' in topic.name or 'Number' in topic.name or 'Arith' in topic.name %}
+        {% with icon="fa-calculator" color="blue" %}
+        <a href="{% url 'aptitude_topic' topic.pk %}" class="apt-topic-card apt-color-{{ color }}">
+          <div class="apt-topic-icon apt-icon-{{ color }}"><i class="fa-solid {{ icon }}"></i></div>
+          <div class="apt-topic-body">
+            <h5 class="apt-topic-name">{{ topic.name }}</h5>
+            <p class="apt-topic-desc">{{ topic.description|truncatechars:70 }}</p>
+            <div class="apt-topic-footer">
+              <span class="apt-q-pill">{{ topic.q_count }} Qs</span>
+              <span class="apt-topic-tag apt-tag-blue">Quantitative</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-arrow-right apt-topic-arrow"></i>
+        </a>
+        {% endwith %}
+      {% elif 'Logical' in topic.name or 'Reason' in topic.name or 'Pattern' in topic.name or 'Series' in topic.name %}
+        {% with icon="fa-brain" color="purple" %}
+        <a href="{% url 'aptitude_topic' topic.pk %}" class="apt-topic-card apt-color-{{ color }}">
+          <div class="apt-topic-icon apt-icon-{{ color }}"><i class="fa-solid {{ icon }}"></i></div>
+          <div class="apt-topic-body">
+            <h5 class="apt-topic-name">{{ topic.name }}</h5>
+            <p class="apt-topic-desc">{{ topic.description|truncatechars:70 }}</p>
+            <div class="apt-topic-footer">
+              <span class="apt-q-pill">{{ topic.q_count }} Qs</span>
+              <span class="apt-topic-tag apt-tag-purple">Logical</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-arrow-right apt-topic-arrow"></i>
+        </a>
+        {% endwith %}
+      {% elif 'Verbal' in topic.name or 'English' in topic.name or 'Grammar' in topic.name or 'Vocab' in topic.name or 'Reading' in topic.name %}
+        {% with icon="fa-spell-check" color="green" %}
+        <a href="{% url 'aptitude_topic' topic.pk %}" class="apt-topic-card apt-color-{{ color }}">
+          <div class="apt-topic-icon apt-icon-{{ color }}"><i class="fa-solid {{ icon }}"></i></div>
+          <div class="apt-topic-body">
+            <h5 class="apt-topic-name">{{ topic.name }}</h5>
+            <p class="apt-topic-desc">{{ topic.description|truncatechars:70 }}</p>
+            <div class="apt-topic-footer">
+              <span class="apt-q-pill">{{ topic.q_count }} Qs</span>
+              <span class="apt-topic-tag apt-tag-green">Verbal</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-arrow-right apt-topic-arrow"></i>
+        </a>
+        {% endwith %}
+      {% elif 'Data' in topic.name or 'Chart' in topic.name or 'Table' in topic.name or 'Graph' in topic.name %}
+        {% with icon="fa-chart-bar" color="amber" %}
+        <a href="{% url 'aptitude_topic' topic.pk %}" class="apt-topic-card apt-color-{{ color }}">
+          <div class="apt-topic-icon apt-icon-{{ color }}"><i class="fa-solid {{ icon }}"></i></div>
+          <div class="apt-topic-body">
+            <h5 class="apt-topic-name">{{ topic.name }}</h5>
+            <p class="apt-topic-desc">{{ topic.description|truncatechars:70 }}</p>
+            <div class="apt-topic-footer">
+              <span class="apt-q-pill">{{ topic.q_count }} Qs</span>
+              <span class="apt-topic-tag apt-tag-amber">Data</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-arrow-right apt-topic-arrow"></i>
+        </a>
+        {% endwith %}
+      {% else %}
+        <a href="{% url 'aptitude_topic' topic.pk %}" class="apt-topic-card apt-color-blue">
+          <div class="apt-topic-icon apt-icon-blue"><i class="fa-solid fa-book-open"></i></div>
+          <div class="apt-topic-body">
+            <h5 class="apt-topic-name">{{ topic.name }}</h5>
+            <p class="apt-topic-desc">{{ topic.description|truncatechars:70 }}</p>
+            <div class="apt-topic-footer">
+              <span class="apt-q-pill">{{ topic.q_count }} Qs</span>
+              <span class="apt-topic-tag apt-tag-blue">General</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-arrow-right apt-topic-arrow"></i>
+        </a>
+      {% endif %}
+      {% empty %}
+      <div class="apt-empty col-span-all">
+        <i class="fa-solid fa-database"></i>
+        <p>No aptitude topics yet.</p>
+        <code>python manage.py import_aptitude_questions --generate</code>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Sidebar: Study Guide ────────────────────── -->
+  <div class="col-lg-4">
+
+    <!-- How to Prepare -->
+    <div class="apt-sidebar-card mb-3">
+      <div class="apt-sidebar-header">
+        <i class="fa-solid fa-map me-2" style="color:var(--amber)"></i>How to Prepare
+      </div>
+      <div class="apt-sidebar-body">
+        <div class="apt-guide-step">
+          <div class="apt-step-num">1</div>
+          <div class="apt-step-body">
+            <div class="apt-step-title">Pick a Topic</div>
+            <div class="apt-step-text">Start with Quantitative or Logical Reasoning — most common in placement tests.</div>
+          </div>
+        </div>
+        <div class="apt-guide-step">
+          <div class="apt-step-num">2</div>
+          <div class="apt-step-body">
+            <div class="apt-step-title">Take the Quiz</div>
+            <div class="apt-step-text">Up to 15 random questions. Work under time pressure like a real exam.</div>
+          </div>
+        </div>
+        <div class="apt-guide-step">
+          <div class="apt-step-num">3</div>
+          <div class="apt-step-body">
+            <div class="apt-step-title">Review Explanations</div>
+            <div class="apt-step-text">Every wrong answer shows the correct answer and a step-by-step explanation.</div>
+          </div>
+        </div>
+        <div class="apt-guide-step last">
+          <div class="apt-step-num">4</div>
+          <div class="apt-step-body">
+            <div class="apt-step-title">Score ≥ 70% → Next Topic</div>
+            <div class="apt-step-text">Move on only when you consistently score 70%+ on retries.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Tips -->
+    <div class="apt-sidebar-card mb-3">
+      <div class="apt-sidebar-header">
+        <i class="fa-solid fa-lightbulb me-2" style="color:var(--amber)"></i>Quick Tips
+      </div>
+      <div class="apt-sidebar-body apt-tips-list">
+        <div class="apt-tip"><span class="apt-tip-emoji">📐</span><span>For percentages: use the multiplier method (e.g., 20% of 150 = 150 × 0.2 = 30)</span></div>
+        <div class="apt-tip"><span class="apt-tip-emoji">🔢</span><span>For series questions: find differences between consecutive terms first.</span></div>
+        <div class="apt-tip"><span class="apt-tip-emoji">⏱️</span><span>Spend max 90 seconds per question — skip and revisit.</span></div>
+        <div class="apt-tip"><span class="apt-tip-emoji">🧮</span><span>Elimination works: rule out obviously wrong options first.</span></div>
+        <div class="apt-tip"><span class="apt-tip-emoji">📝</span><span>Read verbal questions twice before answering.</span></div>
+      </div>
+    </div>
+
+    <!-- Score guide -->
+    <div class="apt-sidebar-card">
+      <div class="apt-sidebar-header">
+        <i class="fa-solid fa-gauge-high me-2" style="color:var(--amber)"></i>Score Guide
+      </div>
+      <div class="apt-sidebar-body">
+        <div class="apt-score-guide-row">
+          <div class="apt-score-bar-wrap">
+            <div class="apt-score-fill" style="width:90%;background:var(--green)"></div>
+          </div>
+          <span class="apt-score-range" style="color:var(--green)">≥ 90%</span>
+          <span class="apt-score-label">Excellent 🏆</span>
+        </div>
+        <div class="apt-score-guide-row">
+          <div class="apt-score-bar-wrap">
+            <div class="apt-score-fill" style="width:70%;background:var(--amber)"></div>
+          </div>
+          <span class="apt-score-range" style="color:var(--amber)">70–89%</span>
+          <span class="apt-score-label">Good ✅</span>
+        </div>
+        <div class="apt-score-guide-row">
+          <div class="apt-score-bar-wrap">
+            <div class="apt-score-fill" style="width:50%;background:#f97316"></div>
+          </div>
+          <span class="apt-score-range" style="color:#f97316">50–69%</span>
+          <span class="apt-score-label">Average 📖</span>
+        </div>
+        <div class="apt-score-guide-row">
+          <div class="apt-score-bar-wrap">
+            <div class="apt-score-fill" style="width:30%;background:var(--red)"></div>
+          </div>
+          <span class="apt-score-range" style="color:var(--red)">&lt; 50%</span>
+          <span class="apt-score-label">Needs Work 🔁</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

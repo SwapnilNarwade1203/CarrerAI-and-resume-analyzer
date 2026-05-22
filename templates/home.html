@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Home – CareerAI{% endblock %}
+
+{% block content %}
+<!-- ── HERO ─────────────────────────────────────────── -->
+<section class="home-hero">
+  <div class="home-hero-badge">
+    <i class="fa-solid fa-sparkles me-2"></i>AI-Powered Career Assistant
+  </div>
+  <h1 class="home-hero-title">Land Your <span class="home-grad">Dream Job</span></h1>
+  <p class="home-hero-sub">Upload your resume, discover skill gaps, and get personalized learning roadmaps to become who employers want to hire.</p>
+  <div class="home-hero-actions">
+    <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Get Started Free <i class="fa-solid fa-arrow-right ms-2"></i></a>
+    <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">Sign In</a>
+  </div>
+</section>
+
+<!-- ── FEATURES ──────────────────────────────────────── -->
+<section class="home-section">
+  <h2 class="home-section-title">Everything You Need to <span class="home-grad">Succeed</span></h2>
+  <div class="home-feature-grid">
+    <div class="home-feature-card">
+      <div class="home-feature-icon"><i class="fa-solid fa-file-circle-check"></i></div>
+      <h3>Resume Analysis</h3>
+      <p>Upload PDF/DOCX. Instantly extract skills, calculate ATS score, and get detailed feedback.</p>
+    </div>
+    <div class="home-feature-card">
+      <div class="home-feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+      <h3>Skill Gap Analysis</h3>
+      <p>Compare your skills against target job roles. Get personalized roadmaps to fill the gaps.</p>
+    </div>
+    <div class="home-feature-card">
+      <div class="home-feature-icon"><i class="fa-solid fa-microphone"></i></div>
+      <h3>Mock Interview</h3>
+      <p>Practice with AI-generated interview questions tailored to your target role.</p>
+    </div>
+    <div class="home-feature-card">
+      <div class="home-feature-icon"><i class="fa-solid fa-hammer"></i></div>
+      <h3>Project Builder</h3>
+      <p>Generate project ideas based on missing skills. Auto-create GitHub repos.</p>
+    </div>
+    <div class="home-feature-card">
+      <div class="home-feature-icon"><i class="fa-solid fa-trophy"></i></div>
+      <h3>Gamification</h3>
+      <p>Earn badges, climb leaderboards, and stay motivated on your learning journey.</p>
+    </div>
+    <div class="home-feature-card">
+      <div class="home-feature-icon"><i class="fa-solid fa-file-lines"></i></div>
+      <h3>ATS Resume Builder</h3>
+      <p>Create ATS-friendly resumes that pass automated screening systems.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── JOB ROLES ─────────────────────────────────────── -->
+{% if job_roles %}
+<section class="home-section">
+  <h2 class="home-section-title">Target <span class="home-grad">Job Roles</span></h2>
+  <div class="home-roles-grid">
+    {% for role in job_roles %}
+    <div class="home-role-badge">
+      <i class="fa-solid fa-briefcase me-2"></i>{{ role.title }}
+    </div>
+    {% endfor %}
+    <a href="{% url 'register' %}" class="home-role-badge home-role-cta">
+      <i class="fa-solid fa-plus me-2"></i>More Roles <i class="fa-solid fa-arrow-right ms-1"></i>
+    </a>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── CTA ───────────────────────────────────────────── -->
+<section class="home-cta">
+  <div class="home-cta-box">
+    <div class="home-cta-icon"><i class="fa-solid fa-rocket"></i></div>
+    <h2>Ready to <span class="home-grad">Accelerate</span> Your Career?</h2>
+    <p>Join thousands of professionals who improved their employability with CareerAI.</p>
+    <a href="{% url 'register' %}" class="btn btn-primary btn-lg px-5">Start for Free <i class="fa-solid fa-rocket ms-2"></i></a>
+  </div>
+</section>
+{% endblock %}

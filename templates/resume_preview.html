@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Resume Preview{% endblock %}
+{% block content %}
+<div class="page-header"><h1 class="page-title">Resume Preview</h1></div>
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="resume-preview-card" id="resumePreview">
+      <div class="rp-header"><h1>{{ data.full_name }}</h1><p>{{ data.email }}{% if data.phone %} · {{ data.phone }}{% endif %}</p>{% if data.linkedin %}<p><a href="{{ data.linkedin }}">{{ data.linkedin }}</a></p>{% endif %}</div>
+      <div class="rp-section"><h3>Summary</h3><p>{{ data.summary }}</p></div>
+      <div class="rp-section"><h3>Skills</h3><p>{{ data.skills }}</p></div>
+      <div class="rp-section"><h3>Experience</h3><pre class="rp-pre">{{ data.experience }}</pre></div>
+      <div class="rp-section"><h3>Education</h3><pre class="rp-pre">{{ data.education }}</pre></div>
+      {% if data.projects %}<div class="rp-section"><h3>Projects</h3><pre class="rp-pre">{{ data.projects }}</pre></div>{% endif %}
+      {% if data.certifications %}<div class="rp-section"><h3>Certifications</h3><pre class="rp-pre">{{ data.certifications }}</pre></div>{% endif %}
+    </div>
+    <div class="text-center mt-4">
+      <button onclick="window.print()" class="btn btn-primary me-3"><i class="fa-solid fa-print me-2"></i>Print / Save PDF</button>
+      <a href="{% url 'create_resume_form' %}" class="btn btn-outline-primary"><i class="fa-solid fa-pen me-2"></i>Edit</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

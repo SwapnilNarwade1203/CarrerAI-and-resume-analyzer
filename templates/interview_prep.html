@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Interview Prep – CareerAI{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1 class="page-title"><i class="fa-solid fa-comments me-2" style="color:var(--amber)"></i>Interview Prep</h1>
+  <p class="page-subtitle">Practice role-specific technical and behavioral questions.</p>
+</div>
+
+<div class="row g-4">
+  <!-- ── Sidebar ─────────────────────────────────── -->
+  <div class="col-lg-3">
+
+    <!-- Filter Panel -->
+    <div class="ip-panel mb-3">
+      <div class="ip-panel-header">
+        <i class="fa-solid fa-sliders me-2"></i>Filter Questions
+      </div>
+      <div class="ip-panel-body">
+        <form method="get" id="filterForm">
+          <div class="ip-filter-group">
+            <label class="ip-filter-label">Job Role</label>
+            <select name="role" class="form-select ip-select" onchange="this.form.submit()">
+              <option value="">— All Roles —</option>
+              {% for role in job_roles %}
+              <option value="{{ role.pk }}" {% if selected_role and selected_role.pk == role.pk %}selected{% endif %}>{{ role.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% if selected_role %}
+          <div class="ip-filter-group">
+            <label class="ip-filter-label">Category</label>
+            <select name="category" class="form-select ip-select" onchange="this.form.submit()">
+              <option value="">All Categories</option>
+              {% for val, label in categories %}
+              <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <!-- Quick Stats (when role selected) -->
+    {% if selected_role and questions %}
+    <div class="ip-stats-row mb-3">
+      <div class="ip-stat-item">
+        <span class="ip-stat-num">{{ questions|length }}</span>
+        <span class="ip-stat-label">Questions</span>
+      </div>
+      <div class="ip-stat-item">
+        <span class="ip-stat-num">{{ selected_role.title|truncatechars:12 }}</span>
+        <span class="ip-stat-label">Role</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Communication Tips -->
+    {% if tips %}
+    <div class="ip-panel">
+      <div class="ip-panel-header">
+        <i class="fa-solid fa-lightbulb me-2" style="color:var(--amber)"></i>Pro Tips
+      </div>
+      <div class="ip-tips-list">
+        {% for tip in tips %}
+        <div class="ip-tip">
+          <div class="ip-tip-dot"></div>
+          <div class="ip-tip-body">
+            <div class="ip-tip-title">{{ tip.title }}</div>
+            <div class="ip-tip-text">{{ tip.content|truncatechars:90 }}</div>
+            {% if tip.video_url %}
+            <a href="{{ tip.video_url }}" target="_blank" class="ip-tip-link">
+              <i class="fa-brands fa-youtube me-1"></i>Watch
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Main Content ───────────────────────────── -->
+  <div class="col-lg-9">
+    {% if selected_role %}
+
+    <!-- Role Header Bar -->
+    <div class="ip-role-bar mb-4">
+      <div class="ip-role-info">
+        <div class="ip-role-icon"><i class="fa-solid fa-briefcase"></i></div>
+        <div>
+          <div class="ip-role-name">{{ selected_role.title }}</div>
+          <div class="ip-role-count">{{ questions|length }} question{{ questions|length|pluralize }}</div>
+        </div>
+      </div>
+      <a href="{% url 'mock_interview' %}?role={{ selected_role.pk }}" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-microphone me-1"></i>Start Mock Interview
+      </a>
+    </div>
+
+    {% if questions %}
+    <!-- Category Legend -->
+    <div class="ip-legend mb-3">
+      <span class="ip-cat-badge ip-cat-technical">Technical</span>
+      <span class="ip-cat-badge ip-cat-behavioral">Behavioral</span>
+      <span class="ip-cat-badge ip-cat-hr">HR</span>
+      <span class="ip-cat-badge ip-cat-system_design">System Design</span>
+    </div>
+
+    <!-- Questions -->
+    <div class="ip-questions">
+      {% for q in questions %}
+      <div class="ip-q-card" id="q-card-{{ q.pk }}">
+        <button class="ip-q-btn" type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#qa{{ q.pk }}"
+          aria-expanded="false">
+          <span class="ip-q-num">{{ forloop.counter }}</span>
+          <span class="ip-cat-dot ip-cat-dot-{{ q.category }}"></span>
+          <span class="ip-q-text">{{ q.question }}</span>
+          <span class="ip-cat-badge ip-cat-{{ q.category }} ms-auto me-3 d-none d-md-inline-flex">{{ q.category }}</span>
+          <i class="fa-solid fa-chevron-down ip-chevron"></i>
+        </button>
+        <div id="qa{{ q.pk }}" class="collapse">
+          <div class="ip-answer">
+            <div class="ip-answer-label">
+              <i class="fa-solid fa-lightbulb me-2"></i>Suggested Answer / Hints
+            </div>
+            <div class="ip-answer-text">{{ q.answer_hints }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="ip-empty">
+      <i class="fa-solid fa-filter-circle-xmark"></i>
+      <p>No questions found for this filter. Try changing the category.</p>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- No role selected state -->
+    <div class="ip-splash">
+      <div class="ip-splash-icon"><i class="fa-solid fa-comments"></i></div>
+      <h3>Choose a Job Role</h3>
+      <p>Select a job role from the filter panel to load interview questions.</p>
+      <div class="ip-splash-roles">
+        {% for role in job_roles|slice:":6" %}
+        <a href="?role={{ role.pk }}" class="ip-splash-role-btn">{{ role.title }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Rotate chevron icon on collapse
+document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
+  const target = document.querySelector(btn.getAttribute('data-bs-target'));
+  if (!target) return;
+  target.addEventListener('show.bs.collapse', () => btn.setAttribute('aria-expanded', 'true'));
+  target.addEventListener('hide.bs.collapse', () => btn.setAttribute('aria-expanded', 'false'));
+});
+</script>
+{% endblock %}
