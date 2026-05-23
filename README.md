@@ -1,6 +1,4 @@
-======================================================
 #AI RESUME ANALYZER & CAREER STUDIO - SETUP INSTRUCTIONS
-======================================================
 
 Welcome to the CareerAI! This document contains all the steps 
 you need to set up the project on your local machine.
