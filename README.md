@@ -1,5 +1,5 @@
 ======================================================
-AI RESUME ANALYZER & CAREER STUDIO - SETUP INSTRUCTIONS
+#AI RESUME ANALYZER & CAREER STUDIO - SETUP INSTRUCTIONS
 ======================================================
 
 Welcome to the CareerAI! This document contains all the steps 
