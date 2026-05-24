@@ -59,7 +59,33 @@
         </div>
         <textarea class="form-control form-control-sm mb-3" rows="3" id="aiText" placeholder="Paste your current section text here..."></textarea>
         <button class="btn btn-primary btn-sm w-100" id="aiSuggestBtn"><i class="fa-solid fa-sparkles me-1"></i>Get AI Suggestions</button>
-        <div id="aiResult" class="mt-3 p-3 rounded" style="display:none;background:var(--bg-card-light);border:1px solid var(--border)"></div>
+        
+        <div id="aiResult" class="mt-3" style="display:none;">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold mb-1"><i class="fa-solid fa-wand-magic-sparkles me-1 text-primary"></i>Improved Version</label>
+            <div class="position-relative">
+              <pre id="aiImprovedText" class="p-3 rounded text-light mb-0" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); white-space: pre-wrap; font-family: inherit; font-size: 0.85rem; line-height: 1.5; padding-right: 40px !important;"></pre>
+              <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2" id="copyBtn" title="Copy to clipboard" style="border: none; background: transparent; color: var(--text-muted);">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold mb-1"><i class="fa-solid fa-list-check me-1 text-success"></i>Key Improvements</label>
+            <ul id="aiKeyChanges" class="list-unstyled ps-0 mb-0" style="font-size: 0.85rem;">
+            </ul>
+          </div>
+          <div class="p-3 rounded" style="background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(255, 193, 7, 0.15);">
+            <div class="d-flex align-items-start gap-2">
+              <i class="fa-solid fa-lightbulb text-warning mt-1" style="font-size: 0.9rem;"></i>
+              <div>
+                <span class="text-warning fw-bold small d-block mb-1">Pro Tips</span>
+                <ul id="aiProTips" class="list-unstyled ps-0 mb-0 text-muted" style="font-size: 0.8rem; line-height: 1.4;">
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -141,18 +167,77 @@ document.getElementById('aiSuggestBtn')?.addEventListener('click', async functio
   const section = document.getElementById('aiSection').value;
   const text = document.getElementById('aiText').value;
   const resultEl = document.getElementById('aiResult');
+  const improvedTextEl = document.getElementById('aiImprovedText');
+  const keyChangesEl = document.getElementById('aiKeyChanges');
+  const proTipsEl = document.getElementById('aiProTips');
+
+  if (!text.trim()) {
+    alert("Please paste your section text first.");
+    return;
+  }
+
   this.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Thinking...';
   this.disabled = true;
+  
   const formData = new FormData();
   formData.append('section', section);
   formData.append('text', text);
   formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-  const res = await fetch('{% url "resume_suggestions" %}', {method:'POST', body:formData});
-  const data = await res.json();
-  resultEl.innerHTML = '<strong>AI Suggestion:</strong><br>' + data.suggestion.replace(/\n/g,'<br>');
-  resultEl.style.display = 'block';
-  this.innerHTML = '<i class="fa-solid fa-sparkles me-1"></i>Get AI Suggestions';
-  this.disabled = false;
+  
+  try {
+    const res = await fetch('{% url "resume_suggestions" %}', {method:'POST', body:formData});
+    const data = await res.json();
+    
+    // Set improved text
+    improvedTextEl.textContent = data.improved_text;
+    
+    // Set key changes
+    keyChangesEl.innerHTML = '';
+    if (data.key_changes && data.key_changes.length > 0) {
+      data.key_changes.forEach(change => {
+        const li = document.createElement('li');
+        li.className = 'mb-1 d-flex align-items-start gap-2 text-muted';
+        li.style.fontSize = '0.8rem';
+        li.innerHTML = `<i class="fa-solid fa-circle-check text-success mt-1" style="font-size: 0.75rem;"></i><span>${change}</span>`;
+        keyChangesEl.appendChild(li);
+      });
+    } else {
+      keyChangesEl.innerHTML = '<li class="text-muted small">No specific changes listed.</li>';
+    }
+    
+    // Set pro tips
+    proTipsEl.innerHTML = '';
+    if (data.pro_tips && data.pro_tips.length > 0) {
+      data.pro_tips.forEach(tip => {
+        const li = document.createElement('li');
+        li.className = 'mb-1';
+        li.textContent = `• ${tip}`;
+        proTipsEl.appendChild(li);
+      });
+    } else {
+      proTipsEl.innerHTML = '<li>No additional tips.</li>';
+    }
+    
+    resultEl.style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    alert("An error occurred while fetching AI suggestions.");
+  } finally {
+    this.innerHTML = '<i class="fa-solid fa-sparkles me-1"></i>Get AI Suggestions';
+    this.disabled = false;
+  }
+});
+
+// Copy button event listener
+document.getElementById('copyBtn')?.addEventListener('click', function() {
+  const text = document.getElementById('aiImprovedText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const icon = this.querySelector('i');
+    icon.className = 'fa-solid fa-check text-success';
+    setTimeout(() => {
+      icon.className = 'fa-regular fa-copy';
+    }, 2000);
+  });
 });
 </script>
 {% endblock %}

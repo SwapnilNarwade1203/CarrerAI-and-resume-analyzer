@@ -1,14 +1,61 @@
 {% extends 'base.html' %}
 {% block title %}Interview Prep – CareerAI{% endblock %}
-{% block content %}
 
+{% block extra_css %}
+<style>
+/* ── Category Filter Buttons ─────────────────────────────── */
+.cat-filter-bar {
+  display: flex; flex-wrap: wrap; gap: .5rem;
+  margin-bottom: 1.4rem;
+}
+.cat-btn {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .42rem 1rem; border-radius: 20px; font-size: .78rem; font-weight: 600;
+  border: 1.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+  color: var(--text-muted); cursor: pointer; transition: all .2s; text-decoration: none;
+}
+.cat-btn:hover { border-color: rgba(255,255,255,0.3); color: #fff; background: rgba(255,255,255,0.08); }
+.cat-btn.active { color: #fff; }
+.cat-btn[data-cat="all"]           { border-color: rgba(255,255,255,0.25); }
+.cat-btn[data-cat="technical"]     { --c:#6c63ff; }
+.cat-btn[data-cat="behavioral"]    { --c:#10b981; }
+.cat-btn[data-cat="situational"]   { --c:#f59e0b; }
+.cat-btn[data-cat="hr"]            { --c:#ec4899; }
+.cat-btn[data-cat="system_design"] { --c:#ef4444; }
+.cat-btn.active { background: color-mix(in srgb, var(--c,#6c63ff) 18%, transparent); border-color: var(--c,#6c63ff); color: var(--c,#6c63ff); }
+
+/* ── Section Dividers ─────────────────────────────────────── */
+.section-label {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-muted); display: flex; align-items: center; gap: .6rem; margin: 1.5rem 0 .8rem;
+}
+.section-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.07); }
+
+/* ── Company Badge ────────────────────────────────────────── */
+.company-badge {
+  font-size: .65rem; font-weight: 700; padding: .2rem .6rem; border-radius: 4px;
+  background: rgba(255,255,255,0.07); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0; white-space: nowrap;
+}
+.company-badge.google   { background: rgba(234,67,53,.15);  color:#f87171; border-color:rgba(234,67,53,.25); }
+.company-badge.amazon   { background: rgba(255,153,0,.15);  color:#fbbf24; border-color:rgba(255,153,0,.25); }
+.company-badge.microsoft{ background: rgba(0,120,215,.15);  color:#60a5fa; border-color:rgba(0,120,215,.25); }
+.company-badge.infosys  { background: rgba(16,185,129,.15); color:#34d399; border-color:rgba(16,185,129,.25); }
+.company-badge.wipro    { background: rgba(139,92,246,.15); color:#a78bfa; border-color:rgba(139,92,246,.25); }
+.company-badge.tcs      { background: rgba(236,72,153,.15); color:#f472b6; border-color:rgba(236,72,153,.25); }
+
+/* ── ip-* (original styles kept) ─────────────────────────── */
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="page-header">
   <h1 class="page-title"><i class="fa-solid fa-comments me-2" style="color:var(--amber)"></i>Interview Prep</h1>
-  <p class="page-subtitle">Practice role-specific technical and behavioral questions.</p>
+  <p class="page-subtitle">Practice role-specific questions. Filter by category and browse real company questions.</p>
 </div>
 
 <div class="row g-4">
-  <!-- ── Sidebar ─────────────────────────────────── -->
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
   <div class="col-lg-3">
 
     <!-- Filter Panel -->
@@ -27,31 +74,20 @@
               {% endfor %}
             </select>
           </div>
-          {% if selected_role %}
-          <div class="ip-filter-group">
-            <label class="ip-filter-label">Category</label>
-            <select name="category" class="form-select ip-select" onchange="this.form.submit()">
-              <option value="">All Categories</option>
-              {% for val, label in categories %}
-              <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          {% endif %}
         </form>
       </div>
     </div>
 
-    <!-- Quick Stats (when role selected) -->
+    <!-- Quick Stats -->
     {% if selected_role and questions %}
     <div class="ip-stats-row mb-3">
       <div class="ip-stat-item">
         <span class="ip-stat-num">{{ questions|length }}</span>
-        <span class="ip-stat-label">Questions</span>
+        <span class="ip-stat-label">Prep Qs</span>
       </div>
       <div class="ip-stat-item">
-        <span class="ip-stat-num">{{ selected_role.title|truncatechars:12 }}</span>
-        <span class="ip-stat-label">Role</span>
+        <span class="ip-stat-num">{{ company_questions|length }}</span>
+        <span class="ip-stat-label">Company Qs</span>
       </div>
     </div>
     {% endif %}
@@ -82,17 +118,17 @@
     {% endif %}
   </div>
 
-  <!-- ── Main Content ───────────────────────────── -->
+  <!-- ── Main Content ──────────────────────────────────────── -->
   <div class="col-lg-9">
     {% if selected_role %}
 
     <!-- Role Header Bar -->
-    <div class="ip-role-bar mb-4">
+    <div class="ip-role-bar mb-3">
       <div class="ip-role-info">
         <div class="ip-role-icon"><i class="fa-solid fa-briefcase"></i></div>
         <div>
           <div class="ip-role-name">{{ selected_role.title }}</div>
-          <div class="ip-role-count">{{ questions|length }} question{{ questions|length|pluralize }}</div>
+          <div class="ip-role-count">{{ questions|length }} prep question{{ questions|length|pluralize }} · {{ company_questions|length }} company question{{ company_questions|length|pluralize }}</div>
         </div>
       </div>
       <a href="{% url 'mock_interview' %}?role={{ selected_role.pk }}" class="btn btn-primary btn-sm">
@@ -100,19 +136,28 @@
       </a>
     </div>
 
-    {% if questions %}
-    <!-- Category Legend -->
-    <div class="ip-legend mb-3">
-      <span class="ip-cat-badge ip-cat-technical">Technical</span>
-      <span class="ip-cat-badge ip-cat-behavioral">Behavioral</span>
-      <span class="ip-cat-badge ip-cat-hr">HR</span>
-      <span class="ip-cat-badge ip-cat-system_design">System Design</span>
+    <!-- ── Category Filter Buttons ─────────────────────────── -->
+    <div class="cat-filter-bar" id="catFilterBar">
+      <a href="?role={{ selected_role.pk }}" class="cat-btn {% if not selected_category %}active{% endif %}" data-cat="all">
+        <i class="fa-solid fa-border-all"></i> All
+      </a>
+      {% for val, label, icon, color in all_categories %}
+      <a href="?role={{ selected_role.pk }}&category={{ val }}"
+         class="cat-btn {% if selected_category == val %}active{% endif %}"
+         data-cat="{{ val }}">
+        <i class="fa-solid {{ icon }}"></i> {{ label }}
+      </a>
+      {% endfor %}
     </div>
 
-    <!-- Questions -->
-    <div class="ip-questions">
+    {% if questions or company_questions %}
+
+    <!-- ── Section 1: Prep Questions ─────────────────────────── -->
+    {% if questions %}
+    <div class="section-label"><i class="fa-solid fa-book me-1"></i>Practice Questions</div>
+    <div class="ip-questions mb-4">
       {% for q in questions %}
-      <div class="ip-q-card" id="q-card-{{ q.pk }}">
+      <div class="ip-q-card" id="q-card-{{ q.pk }}" data-category="{{ q.category }}">
         <button class="ip-q-btn" type="button"
           data-bs-toggle="collapse"
           data-bs-target="#qa{{ q.pk }}"
@@ -120,7 +165,7 @@
           <span class="ip-q-num">{{ forloop.counter }}</span>
           <span class="ip-cat-dot ip-cat-dot-{{ q.category }}"></span>
           <span class="ip-q-text">{{ q.question }}</span>
-          <span class="ip-cat-badge ip-cat-{{ q.category }} ms-auto me-3 d-none d-md-inline-flex">{{ q.category }}</span>
+          <span class="ip-cat-badge ip-cat-{{ q.category }} ms-auto me-3 d-none d-md-inline-flex">{{ q.get_category_display }}</span>
           <i class="fa-solid fa-chevron-down ip-chevron"></i>
         </button>
         <div id="qa{{ q.pk }}" class="collapse">
@@ -134,16 +179,56 @@
       </div>
       {% endfor %}
     </div>
+    {% endif %}
 
-    {% else %}
-    <div class="ip-empty">
-      <i class="fa-solid fa-filter-circle-xmark"></i>
-      <p>No questions found for this filter. Try changing the category.</p>
+    <!-- ── Section 2: Company Questions ──────────────────────── -->
+    {% if company_questions %}
+    <div class="section-label"><i class="fa-solid fa-building me-1"></i>Company Questions</div>
+    <div class="ip-questions">
+      {% for cq in company_questions %}
+      <div class="ip-q-card" id="cq-card-{{ cq.pk }}" data-category="{{ cq.category }}">
+        <button class="ip-q-btn" type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#cqa{{ cq.pk }}"
+          aria-expanded="false">
+          <span class="ip-q-num">{{ forloop.counter }}</span>
+          <span class="ip-cat-dot ip-cat-dot-{{ cq.category }}"></span>
+          <span class="ip-q-text">{{ cq.question }}</span>
+          <span class="company-badge {{ cq.company_name|lower }} ms-auto me-2 d-none d-md-inline-flex">
+            <i class="fa-solid fa-building me-1"></i>{{ cq.company_name }}
+          </span>
+          <span class="ip-cat-badge ip-cat-{{ cq.category }} me-3 d-none d-md-inline-flex">{{ cq.category }}</span>
+          <i class="fa-solid fa-chevron-down ip-chevron"></i>
+        </button>
+        <div id="cqa{{ cq.pk }}" class="collapse">
+          <div class="ip-answer">
+            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+              <div class="ip-answer-label mb-0">
+                <i class="fa-solid fa-lightbulb me-2"></i>Hints / Expected Answer
+              </div>
+              <span class="company-badge {{ cq.company_name|lower }}">
+                <i class="fa-solid fa-building me-1"></i>{{ cq.company_name }} · {{ cq.job_role }}
+              </span>
+            </div>
+            <div class="ip-answer-text">
+              {% if cq.answer_hints %}{{ cq.answer_hints }}{% else %}<em class="text-muted">No hints provided. Think through the core concept and give a structured answer.</em>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
     </div>
     {% endif %}
 
     {% else %}
-    <!-- No role selected state -->
+    <div class="ip-empty">
+      <i class="fa-solid fa-filter-circle-xmark"></i>
+      <p>No questions found for this filter. Try a different category.</p>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- No role selected -->
     <div class="ip-splash">
       <div class="ip-splash-icon"><i class="fa-solid fa-comments"></i></div>
       <h3>Choose a Job Role</h3>
@@ -161,7 +246,7 @@
 
 {% block extra_js %}
 <script>
-// Rotate chevron icon on collapse
+// Rotate chevron on collapse
 document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
   const target = document.querySelector(btn.getAttribute('data-bs-target'));
   if (!target) return;

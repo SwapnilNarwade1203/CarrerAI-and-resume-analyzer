@@ -31,9 +31,9 @@
   padding: .35rem .8rem; border-radius: 20px; font-size: .75rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .05em; border: 1px solid transparent;
 }
-.status-badge.Planning { background: rgba(100,116,139,0.2); color: #94a3b8; border-color: rgba(100,116,139,0.3); }
-.status-badge.In.Progress, .status-badge.In_Progress { background: rgba(245,158,11,0.2); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
-.status-badge.Completed { background: rgba(16,185,129,0.2); color: #34d399; border-color: rgba(16,185,129,0.3); }
+.status-badge.planning { background: rgba(100,116,139,0.2); color: #94a3b8; border-color: rgba(100,116,139,0.3); }
+.status-badge.in_progress { background: rgba(245,158,11,0.2); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+.status-badge.completed { background: rgba(16,185,129,0.2); color: #34d399; border-color: rgba(16,185,129,0.3); }
 
 /* ── Timeline ─────────────────────────────────────────── */
 .timeline-wrap { position: relative; padding-left: 2rem; }
@@ -100,7 +100,7 @@
       <div>
         <h1 class="mb-2" style="font-size: 2.2rem; font-weight: 800; color: #fff;">{{ project.title }}</h1>
         <div class="d-flex align-items-center gap-3 mt-3">
-          <span class="status-badge {{ project.status|replace:' ','_' }}">{{ project.get_status_display }}</span>
+          <span class="status-badge {{ project.status }}">{{ project.get_status_display }}</span>
           
           {% if project.github_repo_url %}
           <a href="{{ project.github_repo_url }}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">

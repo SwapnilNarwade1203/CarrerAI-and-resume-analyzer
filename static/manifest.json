@@ -1,6 +1,6 @@
 {
   "name": "CareerAI",
-  "short_name": "ResumeAI",
+  "short_name": "CareerAI",
   "description": "AI-powered resume & skill gap analyzer for career growth",
   "start_url": "/",
   "display": "standalone",

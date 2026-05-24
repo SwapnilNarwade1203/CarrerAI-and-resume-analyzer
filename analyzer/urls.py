@@ -14,6 +14,7 @@ urlpatterns = [
     path('analysis/<int:pk>/', views.analysis_detail, name='analysis_detail'),
     path('resume/suggestions/', views.resume_suggestions, name='resume_suggestions'),
     path('compare-resumes/', views.compare_resumes, name='compare_resumes'),
+    path('resume/<int:pk>/delete/', views.delete_resume, name='delete_resume'),
 
     # Resume Builder / Studio
     path('resume-studio/', views.resume_studio, name='resume_studio'),

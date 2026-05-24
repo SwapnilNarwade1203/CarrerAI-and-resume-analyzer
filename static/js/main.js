@@ -39,6 +39,13 @@ document.addEventListener('DOMContentLoaded', function () {
   // ── Upload drop zone drag & drop ─────────────────
   const zone = document.querySelector('.upload-zone');
   if (zone) {
+    const fileInput = zone.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    }
+
     zone.addEventListener('dragover', function (e) {
       e.preventDefault();
       zone.classList.add('drag-over');
@@ -49,15 +56,15 @@ document.addEventListener('DOMContentLoaded', function () {
     zone.addEventListener('drop', function (e) {
       e.preventDefault();
       zone.classList.remove('drag-over');
-      const fileInput = zone.querySelector('input[type="file"]');
       if (fileInput && e.dataTransfer.files.length > 0) {
         fileInput.files = e.dataTransfer.files;
         fileInput.dispatchEvent(new Event('change'));
       }
     });
     zone.addEventListener('click', function () {
-      const fileInput = zone.querySelector('input[type="file"]');
-      if (fileInput) fileInput.click();
+      if (fileInput) {
+        fileInput.click();
+      }
     });
   }
 

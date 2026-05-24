@@ -10,10 +10,10 @@ def extract_text_from_file(file_obj):
 
     try:
         if filename.endswith('.pdf'):
-            import PyPDF2
-            reader = PyPDF2.PdfReader(file_obj)
-            for page in reader.pages:
-                text += page.extract_text() or ''
+            import pdfplumber
+            with pdfplumber.open(file_obj) as pdf:
+                for page in pdf.pages:
+                    text += page.extract_text() or ''
         elif filename.endswith('.docx'):
             from docx import Document
             doc = Document(file_obj)
@@ -47,13 +47,46 @@ def extract_skills(text, skill_queryset):
 
 
 def detect_sections(text):
-    """Detect if experience and projects sections are present."""
+    """Detect if experience and projects sections are present using strict header line patterns."""
     lower_text = text.lower()
-    experience_keywords = ['experience', 'work history', 'employment', 'internship', 'worked at', 'job history']
-    project_keywords = ['project', 'projects', 'portfolio', 'built', 'developed', 'created']
+    
+    # 1. Experience detection: Look for standard headers on their own line or at the start of a line
+    experience_headers = [
+        r'(?:^|\n)\s*work\s+experience\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*professional\s+experience\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*experience\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*work\s+history\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*employment\s+history\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*employment\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*job\s+history\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*experience\s+history\s*(?:\n|\r|:|-|\b)'
+    ]
+    
+    experience_present = False
+    for pat in experience_headers:
+        if re.search(pat, lower_text):
+            # Avoid single mentions of "user experience" or "customer experience"
+            ux_count = lower_text.count('user experience') + lower_text.count('customer experience')
+            exp_count = lower_text.count('experience')
+            if exp_count > ux_count:
+                experience_present = True
+                break
 
-    experience_present = any(kw in lower_text for kw in experience_keywords)
-    projects_present = any(kw in lower_text for kw in project_keywords)
+    # 2. Projects detection: Look for standard headers on their own line or at the start of a line
+    project_headers = [
+        r'(?:^|\n)\s*projects\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*academic\s+projects\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*personal\s+projects\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*key\s+projects\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*project\s+details\s*(?:\n|\r|:|-|\b)',
+        r'(?:^|\n)\s*portfolio\s*(?:\n|\r|:|-|\b)'
+    ]
+    projects_present = False
+    for pat in project_headers:
+        if re.search(pat, lower_text):
+            projects_present = True
+            break
+            
     return experience_present, projects_present
 
 
@@ -161,6 +194,65 @@ COURSE_MAP = {
 
 def get_recommendations(missing_skills):
     """Return projects, courses, and certifications for missing skills."""
+    if not missing_skills:
+        return [], [], []
+
+    # Try AI recommendation first
+    try:
+        client, model_name = get_ai_client_and_model()
+        if client:
+            import json
+            skills_to_use = missing_skills[:6] # cap at 6 to keep it fast
+            system_prompt = (
+                "You are an expert career adviser and tech mentor.\n"
+                "Your task is to recommend projects, courses, and certifications to help a candidate bridge their missing skills.\n"
+                "You must return a JSON object with the exact keys: 'projects', 'courses', 'certifications'.\n\n"
+                "Format requirements:\n"
+                "- 'projects': list of objects, each with 'skill' (the exact skill name) and 'project' (a brief project title/idea).\n"
+                "- 'courses': list of objects, each with 'skill' (the exact skill name), 'name' (course name), 'platform' (e.g. Coursera, Udemy, YouTube, edX), and 'url' (a clean, valid URL to search or view the course, e.g. 'https://www.coursera.org/search?query=python').\n"
+                "- 'certifications': list of objects, each with 'skill' (the exact skill name), 'name' (certification name), 'provider' (e.g. AWS, Microsoft, Python Institute, CNCF), and 'url' (valid URL to the certification page).\n\n"
+                "Ensure all URLs are clean, valid, and secure (HTTPS). Do not return any other text, markdown formatting, or preamble."
+            )
+            
+            user_content = f"Missing Skills: {', '.join(skills_to_use)}"
+            
+            resp = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': user_content}
+                ],
+                temperature=0.3,
+                response_format={"type": "json_object"}
+            )
+            data = json.loads(resp.choices[0].message.content.strip())
+            projects = data.get('projects', [])
+            courses = data.get('courses', [])
+            certifications = data.get('certifications', [])
+            
+            # Make sure keys are present and types are correct
+            valid_projects = []
+            for p in projects:
+                if isinstance(p, dict) and 'skill' in p and 'project' in p:
+                    valid_projects.append(p)
+                    
+            valid_courses = []
+            for c in courses:
+                if isinstance(c, dict) and 'skill' in c and 'name' in c and 'platform' in c and 'url' in c:
+                    valid_courses.append(c)
+                    
+            valid_certs = []
+            for cert in certifications:
+                if isinstance(cert, dict) and 'skill' in cert and 'name' in cert and 'provider' in cert and 'url' in cert:
+                    valid_certs.append(cert)
+                    
+            if valid_projects or valid_courses or valid_certs:
+                return valid_projects, valid_courses, valid_certs
+    except Exception as e:
+        # Fall back to manual recommendations on exception
+        pass
+
+    # Manual Fallback
     projects = []
     courses = []
     certifications = []
@@ -247,3 +339,84 @@ def generate_ats_resume_text(data):
         lines.append('-' * 40)
         lines.append(data.get('certifications', ''))
     return '\n'.join(lines)
+
+
+_ai_client_cache = {}  # module-level cache: avoids re-instantiating on every request
+
+
+def get_ai_client_and_model():
+    """
+    Returns (client, model_name) based on the configured OPENAI_API_KEY.
+    The client object is cached at module level to avoid re-initializing on every request.
+    """
+    from openai import OpenAI
+    api_key = getattr(settings, 'OPENAI_API_KEY', '')
+    if not api_key:
+        return None, None
+
+    if api_key in _ai_client_cache:
+        return _ai_client_cache[api_key]
+
+    if api_key.startswith('AIzaSy'):
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+        result = client, "gemini-2.5-flash"
+    else:
+        client = OpenAI(api_key=api_key)
+        result = client, "gpt-3.5-turbo"
+
+    _ai_client_cache[api_key] = result
+    return result
+
+
+def analyze_resume_with_ai(resume_text, target_job_role_title):
+    """
+    Analyzes resume text against a target job role using OpenAI or Gemini.
+    Returns a dict containing scores, feedback, and skill lists.
+    """
+    client, model_name = get_ai_client_and_model()
+    if not client:
+        raise ValueError("AI API Key is not set.")
+
+    system_prompt = (
+        "You are an expert ATS (Applicant Tracking System) and professional resume reviewer.\n"
+        "Your task is to analyze the provided resume text against the target job role: '{role}'.\n"
+        "You MUST return a JSON object with the exact keys described below. Do not return any other text, markdown formatting, or preamble.\n\n"
+        "CRITICAL RULES FOR SCORING:\n"
+        "- If a section is completely missing or has no content (e.g., the candidate has no work experience/employment section, no projects, or no certifications), you MUST assign a score of 0 for that specific score (e.g., experience_score, project_score, or certification_score).\n"
+        "- Do not make up or assume any details not present in the resume.\n"
+        "- Be highly critical and objective. A perfect score of 100 should only be given if the candidate perfectly matches the job role requirements and has outstanding qualifications.\n\n"
+        "Expected JSON format:\n"
+        "{{\n"
+        "  \"ats_score\": <float between 0 and 100>,\n"
+        "  \"education_score\": <float between 0 and 100>,\n"
+        "  \"project_score\": <float between 0 and 100>,\n"
+        "  \"experience_score\": <float between 0 and 100>,\n"
+        "  \"certification_score\": <float between 0 and 100>,\n"
+        "  \"skill_match_score\": <float between 0 and 100>,\n"
+        "  \"education_feedback\": \"<string>\",\n"
+        "  \"project_feedback\": \"<string>\",\n"
+        "  \"experience_feedback\": \"<string>\",\n"
+        "  \"certification_feedback\": \"<string>\",\n"
+        "  \"skill_feedback\": \"<string>\",\n"
+        "  \"general_feedback\": \"<string>\",\n"
+        "  \"extracted_skills\": [\"<skill1>\", \"<skill2>\", ...],\n"
+        "  \"missing_skills\": [\"<skill1>\", \"<skill2>\", ...]\n"
+        "}}\n"
+    ).format(role=target_job_role_title or "General Resume Evaluation")
+
+    resp = client.chat.completions.create(
+        model=model_name,
+        messages=[
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': f"Resume Text:\n{resume_text}"}
+        ],
+        temperature=0.2,
+        response_format={"type": "json_object"}
+    )
+
+    import json
+    result = json.loads(resp.choices[0].message.content.strip())
+    return result

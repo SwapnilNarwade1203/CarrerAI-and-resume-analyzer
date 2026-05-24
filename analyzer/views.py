@@ -26,9 +26,40 @@ from .forms import (
 from .utils import (
     extract_text_from_file, extract_skills, detect_sections,
     calculate_resume_score, get_skill_gap, get_recommendations,
-    create_github_repo
+    create_github_repo, analyze_resume_with_ai, get_ai_client_and_model,
+    PROJECT_MAP, COURSE_MAP, CERTIFICATION_MAP,
 )
 from .youtube_api import get_youtube_videos
+
+
+def _fast_recommendations(missing_skills):
+    """
+    Instant static recommendations — zero network calls.
+    Used on Dashboard and Analysis Detail so those pages never block on AI.
+    Full AI recommendations are still available via the /resume/suggestions/ AJAX endpoint.
+    """
+    if not missing_skills:
+        return [], [], []
+    projects, courses, certifications = [], [], []
+    for skill_name in missing_skills[:8]:
+        key = skill_name.lower()
+        for p in PROJECT_MAP.get(key, PROJECT_MAP['default'])[:2]:
+            projects.append({'skill': skill_name, 'project': p})
+        course_list = COURSE_MAP.get(key)
+        if course_list:
+            for c in course_list[:2]:
+                courses.append({'skill': skill_name, **c})
+        else:
+            courses.append({
+                'skill': skill_name,
+                'name': f'Learn {skill_name}',
+                'platform': 'YouTube',
+                'url': f'https://www.youtube.com/results?search_query={skill_name.replace(" ", "+")}+tutorial',
+            })
+        for cert in CERTIFICATION_MAP.get(key, [])[:1]:
+            certifications.append({'skill': skill_name, **cert})
+    return projects, courses, certifications
+
 
 
 # ─── AUTH VIEWS ───────────────────────────────────────────────────────────────
@@ -142,7 +173,7 @@ def dashboard(request):
         required = list(role.skills.values_list('name', flat=True))
         matching_skills = [s for s in extracted if s in required]
         missing_skills = [s for s in required if s not in extracted]
-        projects_rec, courses_rec, certs_rec = get_recommendations(missing_skills)
+        projects_rec, courses_rec, certs_rec = _fast_recommendations(missing_skills)
 
         # Radar chart data
         radar_labels = ['Skills', 'Experience', 'Projects', 'ATS Score', 'Completeness']
@@ -210,13 +241,6 @@ def upload_resume(request):
     text = extract_text_from_file(uploaded_file)
     uploaded_file.seek(0)
 
-    # Extract skills
-    all_skills = Skill.objects.all()
-    found_skills = extract_skills(text, all_skills)
-
-    # Detect sections
-    experience_present, projects_present = detect_sections(text)
-
     # Determine job role
     job_role = target_role_id
     if not job_role:
@@ -224,44 +248,96 @@ def upload_resume(request):
         if profile:
             job_role = profile.target_job_role
 
-    # Calculate score
-    score, skill_match_score = calculate_resume_score(found_skills, job_role, experience_present, projects_present)
+    role_title = job_role.title if job_role else ""
 
-    # Save resume
-    resume = Resume.objects.create(
-        user=request.user,
-        file=uploaded_file,
-        extracted_text=text,
-        extracted_skills=found_skills,
-        experience_present=experience_present,
-        projects_present=projects_present,
-        score=score,
-    )
+    # Try AI analysis if API Key is configured
+    api_key = getattr(settings, 'OPENAI_API_KEY', '')
+    ai_result = None
+    if api_key:
+        try:
+            ai_result = analyze_resume_with_ai(text, role_title)
+        except Exception:
+            # Fall back to rule-based analysis
+            pass
 
-    # Create detailed analysis
-    edu_kws = ['education', 'degree', 'bachelor', 'master', 'university', 'college']
-    cert_kws = ['certification', 'certified', 'certificate', 'aws', 'coursera', 'udemy']
-    edu_score = 100 if any(kw in text.lower() for kw in edu_kws) else 30
-    cert_score = 100 if any(kw in text.lower() for kw in cert_kws) else 20
-    exp_score = 100 if experience_present else 20
-    proj_score = 100 if projects_present else 20
-    ats_score = round((skill_match_score + edu_score + exp_score + proj_score + cert_score) / 5, 1)
+    if ai_result:
+        extracted_raw = ai_result.get('extracted_skills', [])
+        found_skills = []
+        # Match case-insensitively with Skill objects in db to keep original casing
+        db_skills = {s.name.lower(): s.name for s in Skill.objects.all()}
+        for s in extracted_raw:
+            s_low = s.lower()
+            if s_low in db_skills:
+                found_skills.append(db_skills[s_low])
+            else:
+                found_skills.append(s)
 
-    ResumeAnalysis.objects.create(
-        resume=resume,
-        ats_score=ats_score,
-        education_score=edu_score,
-        project_score=proj_score,
-        experience_score=exp_score,
-        certification_score=cert_score,
-        skill_match_score=skill_match_score,
-        education_feedback='Good education section detected.' if edu_score == 100 else 'Add your education details (degree, institution, year).',
-        project_feedback='Projects section found.' if proj_score == 100 else 'Add a projects section to showcase your work.',
-        experience_feedback='Experience section detected.' if exp_score == 100 else 'Add work experience or internship details.',
-        certification_feedback='Certifications mentioned.' if cert_score == 100 else 'Consider adding relevant certifications.',
-        skill_feedback=f'Matched {len(found_skills)} skills from your resume.',
-        general_feedback=f'Your resume scored {score}/100. Focus on the missing skills to boost your score.',
-    )
+        score = ai_result.get('ats_score', 0.0)
+        resume = Resume.objects.create(
+            user=request.user,
+            file=uploaded_file,
+            extracted_text=text,
+            extracted_skills=found_skills,
+            experience_present=ai_result.get('experience_score', 0.0) >= 50.0,
+            projects_present=ai_result.get('project_score', 0.0) >= 50.0,
+            score=score,
+        )
+
+        ResumeAnalysis.objects.create(
+            resume=resume,
+            ats_score=ai_result.get('ats_score', 0.0),
+            education_score=ai_result.get('education_score', 0.0),
+            project_score=ai_result.get('project_score', 0.0),
+            experience_score=ai_result.get('experience_score', 0.0),
+            certification_score=ai_result.get('certification_score', 0.0),
+            skill_match_score=ai_result.get('skill_match_score', 0.0),
+            education_feedback=ai_result.get('education_feedback', ''),
+            project_feedback=ai_result.get('project_feedback', ''),
+            experience_feedback=ai_result.get('experience_feedback', ''),
+            certification_feedback=ai_result.get('certification_feedback', ''),
+            skill_feedback=ai_result.get('skill_feedback', ''),
+            general_feedback=ai_result.get('general_feedback', ''),
+        )
+    else:
+        # Fall back to local rule-based analysis
+        all_skills = Skill.objects.all()
+        found_skills = extract_skills(text, all_skills)
+        experience_present, projects_present = detect_sections(text)
+        score, skill_match_score = calculate_resume_score(found_skills, job_role, experience_present, projects_present)
+
+        resume = Resume.objects.create(
+            user=request.user,
+            file=uploaded_file,
+            extracted_text=text,
+            extracted_skills=found_skills,
+            experience_present=experience_present,
+            projects_present=projects_present,
+            score=score,
+        )
+
+        edu_kws = ['education', 'degree', 'bachelor', 'master', 'university', 'college']
+        cert_kws = ['certification', 'certified', 'certificate', 'aws', 'coursera', 'udemy']
+        edu_score = 100 if any(kw in text.lower() for kw in edu_kws) else 30
+        cert_score = 100 if any(kw in text.lower() for kw in cert_kws) else 20
+        exp_score = 100 if experience_present else 20
+        proj_score = 100 if projects_present else 20
+        ats_score = round((skill_match_score + edu_score + exp_score + proj_score + cert_score) / 5, 1)
+
+        ResumeAnalysis.objects.create(
+            resume=resume,
+            ats_score=ats_score,
+            education_score=edu_score,
+            project_score=proj_score,
+            experience_score=exp_score,
+            certification_score=cert_score,
+            skill_match_score=skill_match_score,
+            education_feedback='Good education section detected.' if edu_score == 100 else 'Add your education details (degree, institution, year).',
+            project_feedback='Projects section found.' if proj_score == 100 else 'Add a projects section to showcase your work.',
+            experience_feedback='Experience section detected.' if exp_score == 100 else 'Add work experience or internship details.',
+            certification_feedback='Certifications mentioned.' if cert_score == 100 else 'Consider adding relevant certifications.',
+            skill_feedback=f'Matched {len(found_skills)} skills from your resume.',
+            general_feedback=f'Your resume scored {score}/100. Focus on the missing skills to boost your score.',
+        )
 
     # Update user profile job role if provided
     if job_role:
@@ -282,7 +358,7 @@ def analysis_detail(request, pk):
     job_role = profile.target_job_role
     missing_skills = get_skill_gap(resume.extracted_skills, job_role)
     matching_skills = [s for s in resume.extracted_skills if job_role and s in list(job_role.skills.values_list('name', flat=True))]
-    projects_rec, courses_rec, certs_rec = get_recommendations(missing_skills)
+    projects_rec, courses_rec, certs_rec = _fast_recommendations(missing_skills)
 
     improvement_tips = []
     if not resume.experience_present:
@@ -316,6 +392,7 @@ def interview_prep(request):
     job_roles = JobRole.objects.all()
     selected_role = None
     questions = []
+    company_questions = []
     tips = CommunicationTip.objects.all()
 
     role_id = request.GET.get('role')
@@ -327,11 +404,27 @@ def interview_prep(request):
         if category:
             questions = questions.filter(category=category)
 
+        # Company questions: match by role title (CharField), case-insensitive
+        cq_qs = CompanyQuestion.objects.filter(job_role__icontains=selected_role.title)
+        if category:
+            cq_qs = cq_qs.filter(category=category)
+        company_questions = list(cq_qs.order_by('company_name', 'category'))
+
+    all_categories = [
+        ('technical',     'Technical',     'fa-code',          '#6c63ff'),
+        ('behavioral',    'Behavioral',    'fa-comments',      '#10b981'),
+        ('situational',   'Situational',   'fa-lightbulb',     '#f59e0b'),
+        ('hr',            'HR',            'fa-user-tie',      '#ec4899'),
+        ('system_design', 'System Design', 'fa-network-wired', '#ef4444'),
+    ]
+
     return render(request, 'interview_prep.html', {
         'job_roles': job_roles,
         'selected_role': selected_role,
         'questions': questions,
+        'company_questions': company_questions,
         'tips': tips,
+        'all_categories': all_categories,
         'categories': [('technical', 'Technical'), ('behavioral', 'Behavioral'), ('situational', 'Situational')],
         'selected_category': category,
     })
@@ -532,18 +625,96 @@ def aptitude_topic(request, topic_id):
 
 # ─── MOCK INTERVIEW ──────────────────────────────────────────────────────────
 
-FALLBACK_QUESTIONS = [
-    "Tell me about yourself and your background.",
-    "What are your greatest strengths?",
-    "Describe a challenging project you worked on. How did you handle it?",
-    "Where do you see yourself in 5 years?",
-    "Why do you want to work in this field?",
-    "How do you handle tight deadlines and pressure?",
-    "Describe your experience with teamwork and collaboration.",
-    "What is your approach to problem-solving?",
-    "How do you keep your technical skills up to date?",
-    "Do you have any questions for us?",
+# Generic technical fallback (used only when OpenAI fails)
+TECHNICAL_FALLBACK_QUESTIONS = [
+    "Explain the difference between a stack and a queue with a real-world use case.",
+    "What is the time complexity of QuickSort in the worst case, and how would you avoid it?",
+    "Describe how you would design a URL shortener service (system design).",
+    "What are SOLID principles? Give an example of the Single Responsibility Principle.",
+    "Explain the difference between REST and GraphQL APIs. When would you use each?",
+    "How does garbage collection work in a language you know well?",
+    "Describe a situation where you had to debug a production issue. What was your process?",
+    "What is the CAP theorem and how does it affect distributed database design?",
+    "Explain how you would optimize a slow SQL query.",
+    "What is the difference between horizontal and vertical scaling?",
 ]
+
+# Generic HR / behavioral fallback (used only when OpenAI fails)
+HR_FALLBACK_QUESTIONS = [
+    "Tell me about a time you had a conflict with a team member and how you resolved it.",
+    "Describe a situation where you had to meet a very tight deadline. What did you do?",
+    "Give me an example of a time you showed leadership without having a formal title.",
+    "Tell me about a project that failed. What did you learn from it?",
+    "How do you prioritize your work when you have multiple competing deadlines?",
+    "Describe a time you received critical feedback. How did you respond?",
+    "Tell me about a time you went above and beyond what was expected of you.",
+    "How do you handle working with a difficult stakeholder or client?",
+    "Describe a time you had to quickly learn a new technology or skill. How did you approach it?",
+    "Where do you see yourself in 5 years, and how does this role fit into that plan?",
+]
+
+
+def _get_fallback_questions(interview_type):
+    """Return the appropriate hardcoded fallback list based on interview type."""
+    if interview_type == 'hr':
+        return HR_FALLBACK_QUESTIONS
+    return TECHNICAL_FALLBACK_QUESTIONS
+
+
+def _build_start_prompt(interview_type, role_title):
+    """Return (system_prompt, user_content) for generating the first question."""
+    if interview_type == 'hr':
+        system_prompt = (
+            f"You are a senior HR manager conducting a behavioral interview for the role of '{role_title}'. "
+            f"Your task is to ask the FIRST behavioral interview question. "
+            f"Focus on soft skills: teamwork, communication, conflict resolution, adaptability, or leadership. "
+            f"Do NOT ask technical questions. Keep it concise (1-2 sentences)."
+        )
+    else:
+        system_prompt = (
+            f"You are an expert technical interviewer conducting a technical interview for the role of '{role_title}'. "
+            f"Your task is to ask the FIRST technical interview question. "
+            f"Ask a specific, domain-relevant technical or conceptual question that tests core competency in this field. "
+            f"Do NOT ask generic HR/behavioral questions (e.g., 'tell me about yourself'). Keep it concise (1-2 sentences)."
+        )
+    user_content = f"Job Role: {role_title}. Ask the first question."
+    return system_prompt, user_content
+
+
+def _build_followup_prompt(interview_type, role_title, formatted_history):
+    """Return (system_prompt, user_content) for generating a follow-up question."""
+    if interview_type == 'hr':
+        system_prompt = (
+            f"You are a senior HR manager conducting a behavioral interview for the role of '{role_title}'. "
+            f"Based on the interview so far, ask a concise follow-up behavioral question that explores the candidate's "
+            f"soft skills, emotional intelligence, conflict resolution, or professional attitude. "
+            f"Do NOT ask technical questions. Keep it to 1-2 sentences."
+        )
+    else:
+        system_prompt = (
+            f"You are an expert technical interviewer for the role of '{role_title}'. "
+            f"Based on the interview so far, ask a concise follow-up technical question that digs deeper into the "
+            f"candidate's knowledge. It should be domain-specific, test practical understanding, and vary from previous questions. "
+            f"Do NOT ask behavioral or HR questions. Keep it to 1-2 sentences."
+        )
+    return system_prompt, f"Interview History:\n{formatted_history}"
+
+
+def _build_eval_prompt(interview_type, role_title):
+    """Return the system prompt for AI-based evaluation at the end."""
+    track = "behavioral/HR" if interview_type == 'hr' else "technical"
+    return (
+        f"You are an expert senior hiring manager evaluating a candidate for the role of '{role_title}'.\n"
+        f"This was a {track} interview. Critically evaluate the transcript below.\n\n"
+        f"Scoring Rules:\n"
+        f"- For technical interviews: assess accuracy, depth, clarity, and problem-solving approach.\n"
+        f"- For HR interviews: assess communication, self-awareness, professionalism, and use of STAR method.\n"
+        f"- Be objective and critical. Deduct points for vague, generic, or incomplete answers.\n"
+        f"- A score of 90+ is rare; reserve it for truly exceptional answers.\n\n"
+        f"Return ONLY a raw JSON object (no markdown) with exactly two keys:\n"
+        f"  'score': integer 0-100 representing overall interview readiness\n"
+        f"  'feedback': detailed paragraph explaining strengths, weaknesses, and specific improvement suggestions"
+    )
 
 
 @login_required
@@ -553,83 +724,217 @@ def mock_interview(request):
     current_question = None
     transcript = []
 
-    role_id = request.GET.get('role')
     session_id = request.GET.get('session')
-
     if session_id:
         session = get_object_or_404(MockInterviewSession, pk=session_id, user=request.user)
         transcript = session.transcript or []
 
+    # Get OpenAI client
+    client, model_name = get_ai_client_and_model()
+
+    # ── POST ──────────────────────────────────────────────────────────────────
     if request.method == 'POST':
         action = request.POST.get('action')
 
+        # ── START ─────────────────────────────────────────────────────────────
         if action == 'start':
             role_id = request.POST.get('role_id')
+            interview_type = request.POST.get('interview_type', 'technical')
             role = get_object_or_404(JobRole, pk=role_id) if role_id else None
+            role_title = role.title if role else 'General Professional'
+            request.session['interview_type'] = interview_type
+
+            first_question = None
+            if client:
+                try:
+                    sys_prompt, usr_content = _build_start_prompt(interview_type, role_title)
+                    resp = client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {'role': 'system', 'content': sys_prompt},
+                            {'role': 'user', 'content': usr_content},
+                        ]
+                    )
+                    first_question = resp.choices[0].message.content.strip()
+                except Exception:
+                    pass
+
+            # Fallback: use domain-appropriate hardcoded question
+            if not first_question:
+                fallbacks = _get_fallback_questions(interview_type)
+                if role:
+                    qs = list(InterviewQuestion.objects.filter(
+                        job_role=role,
+                        category='behavioral' if interview_type == 'hr' else 'technical'
+                    ))
+                    first_question = qs[0].question if qs else fallbacks[0]
+                else:
+                    first_question = fallbacks[0]
+
             session = MockInterviewSession.objects.create(user=request.user, job_role=role, transcript=[])
+            request.session['current_interview_question'] = first_question
             return redirect(f'/mock-interview/?session={session.pk}')
 
+        # ── ANSWER ────────────────────────────────────────────────────────────
         elif action == 'answer' and session:
             answer = request.POST.get('answer', '').strip()
-            q_index = len(session.transcript)
+            interview_type = request.session.get('interview_type', 'technical')
+            role_title = session.job_role.title if session.job_role else 'General Professional'
 
-            # Get question
-            if session.job_role:
-                qs = list(InterviewQuestion.objects.filter(job_role=session.job_role))
-                if q_index < len(qs):
-                    question_text = qs[q_index].question
+            question_text = request.session.get('current_interview_question')
+            if not question_text:
+                # Emergency fallback if session expired
+                q_index = len(transcript)
+                fallbacks = _get_fallback_questions(interview_type)
+                question_text = fallbacks[q_index % len(fallbacks)]
+
+            transcript.append({'question': question_text, 'answer': answer})
+            session.transcript = transcript
+
+            # ── 5-question threshold → evaluate and end ──
+            if len(transcript) >= 5:
+                session.ended_at = timezone.now()
+                if client:
+                    try:
+                        formatted_transcript = ''.join(
+                            f"Q{i+1}: {e['question']}\nA{i+1}: {e['answer']}\n\n"
+                            for i, e in enumerate(transcript)
+                        )
+                        resp = client.chat.completions.create(
+                            model=model_name,
+                            messages=[
+                                {'role': 'system', 'content': _build_eval_prompt(interview_type, role_title)},
+                                {'role': 'user', 'content': f'Transcript:\n{formatted_transcript}'},
+                            ],
+                            response_format={'type': 'json_object'}
+                        )
+                        eval_data = json.loads(resp.choices[0].message.content.strip())
+                        session.score = float(eval_data.get('score', 60.0))
+                        feedback = eval_data.get('feedback', 'Thank you for completing the interview.')
+                        transcript.append({'question': '📊 AI Feedback & Score Breakdown', 'answer': feedback})
+                        session.transcript = transcript
+                    except Exception:
+                        session.score = min(len(transcript) * 18, 90)
                 else:
-                    question_text = random.choice(FALLBACK_QUESTIONS)
-            else:
-                question_text = FALLBACK_QUESTIONS[q_index % len(FALLBACK_QUESTIONS)]
+                    session.score = min(len(transcript) * 18, 90)
 
-            # Try OpenAI for follow-up, fallback to next static question
+                session.save()
+                request.session.pop('current_interview_question', None)
+                return redirect(f'/mock-interview/?session={session.pk}')
+
+            # ── Generate next question ──
             next_question = None
-            api_key = getattr(settings, 'OPENAI_API_KEY', '')
-            if api_key and len(transcript) > 0:
+            if client:
                 try:
-                    from openai import OpenAI
-                    client = OpenAI(api_key=api_key)
+                    formatted_history = ''.join(
+                        f"Q{i+1}: {e['question']}\nA{i+1}: {e['answer']}\n\n"
+                        for i, e in enumerate(transcript)
+                    )
+                    sys_prompt, usr_content = _build_followup_prompt(interview_type, role_title, formatted_history)
                     resp = client.chat.completions.create(
-                        model='gpt-3.5-turbo',
+                        model=model_name,
                         messages=[
-                            {'role': 'system', 'content': 'You are a professional interviewer. Ask one concise follow-up interview question based on the candidate\'s answer.'},
-                            {'role': 'user', 'content': f'Question: {question_text}\nAnswer: {answer}'}
-                        ],
-                        max_tokens=100
+                            {'role': 'system', 'content': sys_prompt},
+                            {'role': 'user', 'content': usr_content},
+                        ]
                     )
                     next_question = resp.choices[0].message.content.strip()
                 except Exception:
                     pass
 
-            # Append to transcript
-            transcript.append({'question': question_text, 'answer': answer})
-            session.transcript = transcript
+            if not next_question:
+                q_index = len(transcript)
+                fallbacks = _get_fallback_questions(interview_type)
+                if session.job_role:
+                    qs = list(InterviewQuestion.objects.filter(
+                        job_role=session.job_role,
+                        category='behavioral' if interview_type == 'hr' else 'technical'
+                    ))
+                    next_question = qs[q_index].question if q_index < len(qs) else fallbacks[q_index % len(fallbacks)]
+                else:
+                    next_question = fallbacks[q_index % len(fallbacks)]
+
             session.save()
+            request.session['current_interview_question'] = next_question
             return redirect(f'/mock-interview/?session={session.pk}')
 
+        # ── END (early exit) ──────────────────────────────────────────────────
         elif action == 'end' and session:
+            interview_type = request.session.get('interview_type', 'technical')
+            role_title = session.job_role.title if session.job_role else 'General Professional'
             session.ended_at = timezone.now()
-            session.score = min(len(session.transcript) * 10, 100)
-            session.save()
-            return render(request, 'mock_interview.html', {
-                'job_roles': job_roles,
-                'session': session,
-                'transcript': session.transcript,
-                'ended': True,
-            })
 
-    # Determine current question
-    if session and not session.ended_at:
-        q_index = len(transcript)
-        if session.job_role:
-            qs = list(InterviewQuestion.objects.filter(job_role=session.job_role))
-            if q_index < len(qs):
-                current_question = qs[q_index].question
+            if len(transcript) > 0 and client:
+                try:
+                    formatted_transcript = ''.join(
+                        f"Q{i+1}: {e['question']}\nA{i+1}: {e['answer']}\n\n"
+                        for i, e in enumerate(transcript)
+                    )
+                    resp = client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {'role': 'system', 'content': _build_eval_prompt(interview_type, role_title)},
+                            {'role': 'user', 'content': f'Transcript:\n{formatted_transcript}'},
+                        ],
+                        response_format={'type': 'json_object'}
+                    )
+                    eval_data = json.loads(resp.choices[0].message.content.strip())
+                    session.score = float(eval_data.get('score', 60.0))
+                    feedback = eval_data.get('feedback', 'Interview ended early.')
+                    transcript.append({'question': '📊 AI Feedback & Score Breakdown', 'answer': feedback})
+                    session.transcript = transcript
+                except Exception:
+                    session.score = max(len(transcript) * 15, 10)
             else:
-                current_question = FALLBACK_QUESTIONS[q_index % len(FALLBACK_QUESTIONS)]
-        else:
-            current_question = FALLBACK_QUESTIONS[q_index % len(FALLBACK_QUESTIONS)]
+                session.score = 0.0
+
+            session.save()
+            request.session.pop('current_interview_question', None)
+            return redirect(f'/mock-interview/?session={session.pk}')
+
+    # ── GET ────────────────────────────────────────────────────────────────────
+    interview_type = request.session.get('interview_type', 'technical')
+
+    if session and not session.ended_at:
+        current_question = request.session.get('current_interview_question')
+        if not current_question:
+            # Session state lost (e.g. browser refresh after server restart) → regenerate
+            q_index = len(transcript)
+            role_title = session.job_role.title if session.job_role else 'General Professional'
+
+            if client:
+                try:
+                    if q_index == 0:
+                        sys_prompt, usr_content = _build_start_prompt(interview_type, role_title)
+                    else:
+                        formatted_history = ''.join(
+                            f"Q{i+1}: {e['question']}\nA{i+1}: {e['answer']}\n\n"
+                            for i, e in enumerate(transcript)
+                        )
+                        sys_prompt, usr_content = _build_followup_prompt(interview_type, role_title, formatted_history)
+                    resp = client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {'role': 'system', 'content': sys_prompt},
+                            {'role': 'user', 'content': usr_content},
+                        ]
+                    )
+                    current_question = resp.choices[0].message.content.strip()
+                except Exception:
+                    pass
+
+            if not current_question:
+                fallbacks = _get_fallback_questions(interview_type)
+                if session.job_role:
+                    qs = list(InterviewQuestion.objects.filter(
+                        job_role=session.job_role,
+                        category='behavioral' if interview_type == 'hr' else 'technical'
+                    ))
+                    current_question = qs[q_index].question if q_index < len(qs) else fallbacks[q_index % len(fallbacks)]
+                else:
+                    current_question = fallbacks[q_index % len(fallbacks)]
+
+            request.session['current_interview_question'] = current_question
 
     return render(request, 'mock_interview.html', {
         'job_roles': job_roles,
@@ -637,7 +942,10 @@ def mock_interview(request):
         'transcript': transcript,
         'current_question': current_question,
         'q_number': len(transcript) + 1,
+        'interview_type': interview_type,
     })
+
+
 
 
 # ─── PROJECT BUILDER ─────────────────────────────────────────────────────────
@@ -959,24 +1267,82 @@ def admin_analytics(request):
 def resume_suggestions(request):
     section = request.POST.get('section', '')
     text = request.POST.get('text', '')
-    api_key = getattr(settings, 'OPENAI_API_KEY', '')
 
-    if not api_key:
-        suggestions = f"Tip: Improve your {section} by:\n• Use action verbs (Developed, Implemented, Led)\n• Add quantifiable metrics (Increased X by 30%)\n• Keep it concise and relevant to the target role."
-        return JsonResponse({'suggestion': suggestions})
+    client, model_name = get_ai_client_and_model()
+
+    if not client:
+        fallback = {
+            'improved_text': text or "Please paste your current text to see an improved version.",
+            'key_changes': [
+                f"Use strong action verbs (e.g., 'Spearheaded', 'Engineered', 'Optimized') to describe your {section}.",
+                "Add quantifiable metrics and results where possible (e.g., 'reduced latency by 40%').",
+                "Ensure correct formatting, grammar, and professional tone."
+            ],
+            'pro_tips': [
+                "Keep descriptions to 3-4 bullet points maximum.",
+                "Align keywords with your target job role's required skills."
+            ]
+        }
+        return JsonResponse(fallback)
 
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-        resp = client.chat.completions.create(
-            model='gpt-3.5-turbo',
-            messages=[
-                {'role': 'system', 'content': 'You are an expert resume writer. Improve the given resume section to be more impactful, ATS-friendly, and professional. Keep it concise.'},
-                {'role': 'user', 'content': f'Improve this {section} section:\n\n{text}'}
-            ],
-            max_tokens=300
+        system_prompt = (
+            "You are an expert resume writer and ATS specialist.\n"
+            "Your task is to analyze and improve the user's resume section (e.g., summary, experience, skills, projects).\n"
+            "You MUST return a JSON object with the exact keys: 'improved_text', 'key_changes', 'pro_tips'. Do not return any other text, markdown formatting, or preamble.\n\n"
+            "Format requirements:\n"
+            "- 'improved_text': The complete, improved, and polished version of the user's input text. Keep it professional, impactful, and ATS-friendly.\n"
+            "- 'key_changes': A list of strings (2-4 items) explaining exactly what you changed and why (e.g. 'Replaced passive verbs with active ones', 'Restructured for readability').\n"
+            "- 'pro_tips': A list of strings (1-2 items) offering additional advice for this section."
         )
-        suggestion = resp.choices[0].message.content.strip()
-        return JsonResponse({'suggestion': suggestion})
+        
+        user_content = f"Section Type: {section}\nUser Text:\n{text}"
+        
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': user_content}
+            ],
+            temperature=0.3,
+            response_format={"type": "json_object"}
+        )
+        
+        import json
+        data = json.loads(resp.choices[0].message.content.strip())
+        return JsonResponse({
+            'improved_text': data.get('improved_text', ''),
+            'key_changes': data.get('key_changes', []),
+            'pro_tips': data.get('pro_tips', [])
+        })
     except Exception as e:
-        return JsonResponse({'suggestion': 'Unable to get AI suggestions at this time. Please try again.', 'error': str(e)})
+        fallback = {
+            'improved_text': text or "Please paste your current text to see an improved version.",
+            'key_changes': [
+                f"Use strong action verbs (e.g., 'Spearheaded', 'Engineered', 'Optimized') to describe your {section}.",
+                "Add quantifiable metrics and results where possible (e.g., 'reduced latency by 40%').",
+                "Ensure correct formatting, grammar, and professional tone."
+            ],
+            'pro_tips': [
+                "Keep descriptions to 3-4 bullet points maximum.",
+                "Align keywords with your target job role's required skills.",
+                "Note: AI suggestion is temporarily offline (Rate Limit / Quota reached)."
+            ]
+        }
+        return JsonResponse(fallback)
+
+
+@login_required
+@require_POST
+def delete_resume(request, pk):
+    import os
+    resume = get_object_or_404(Resume, pk=pk, user=request.user)
+    if resume.file:
+        try:
+            if os.path.exists(resume.file.path):
+                os.remove(resume.file.path)
+        except Exception:
+            pass
+    resume.delete()
+    messages.success(request, 'Resume deleted successfully!')
+    return redirect('dashboard')

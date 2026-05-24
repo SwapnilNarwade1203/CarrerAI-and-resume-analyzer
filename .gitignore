@@ -20,3 +20,6 @@ media/
 
 # Logs
 *.log
+
+# Collected static files
+staticfiles/

@@ -37,8 +37,8 @@
 <div class="row justify-content-center">
   <div class="col-lg-7">
     <div class="interview-progress mb-4">
-      <div class="d-flex justify-content-between text-muted small mb-1">
-        <span>Question {{ q_number }}</span>
+      <div class="d-flex justify-content-between text-muted small mb-1 align-items-center">
+        <span>Question {{ q_number }} <span class="badge bg-secondary ms-1">{% if interview_type == 'technical' %}🛠 Technical{% else %}💼 HR & Behavioral{% endif %}</span></span>
         <span>{{ transcript|length }} answered</span>
       </div>
       <div class="progress" style="height:6px"><div class="progress-bar" style="width:{{ q_number|add:'-1' }}0%"></div></div>
@@ -56,8 +56,7 @@
             <textarea name="answer" class="form-control" rows="5" placeholder="Type your answer here..." required></textarea>
           </div>
           <div class="d-flex gap-3">
-            <button type="submit" class="btn btn-primary flex-grow-1"><i class="fa-solid fa-paper-plane me-2"></i>Submit Answer</button>
-            <form method="post" class="m-0"><{% csrf_token %}<input type="hidden" name="action" value="end"><input type="hidden" name="session_id" value="{{ session.pk }}"></form>
+            <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-paper-plane me-2"></i>Submit Answer</button>
           </div>
         </form>
         <form method="post" class="mt-2">
@@ -90,11 +89,18 @@
         <form method="post">
           {% csrf_token %}
           <input type="hidden" name="action" value="start">
-          <div class="mb-4">
+          <div class="mb-3">
             <label class="form-label">Select Job Role</label>
             <select name="role_id" class="form-select">
               <option value="">— General Interview —</option>
               {% for role in job_roles %}<option value="{{ role.pk }}">{{ role.title }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Select Interview Type</label>
+            <select name="interview_type" class="form-select">
+              <option value="technical">🛠 Technical Interview (Industry Level)</option>
+              <option value="hr">💼 HR & Behavioral Interview</option>
             </select>
           </div>
           <ul class="tip-list mb-4 text-muted small">

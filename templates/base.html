@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
   <!-- Custom CSS -->
   {% load static %}
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.7">
   <!-- PWA Manifest -->
   <link rel="manifest" href="{% static 'manifest.json' %}">
   <meta name="theme-color" content="#f59e0b">
@@ -30,18 +30,8 @@
   <div class="sidebar-header">
     <a href="{% url 'dashboard' %}" class="sidebar-brand">
       <i class="fa-solid fa-brain" style="color:var(--amber)"></i>
-      Resume<span>AI</span>
+      Career<span>AI</span>
     </a>
-  </div>
-
-  <!-- Theme Toggle -->
-  <div class="sidebar-theme-wrap">
-    <button class="theme-toggle-btn" id="themeToggle" title="Toggle dark/light mode">
-      <i class="fa-solid fa-moon theme-icon-dark"></i>
-      <span class="theme-label-dark">Dark</span>
-      <i class="fa-solid fa-sun theme-icon-light"></i>
-      <span class="theme-label-light">Light</span>
-    </button>
   </div>
 
   <ul class="sidebar-nav">
@@ -84,7 +74,7 @@
       </a>
     </li>
     <li>
-      <a href="{% url 'resume_studio' %}" class="{% if 'resume' in request.resolver_match.url_name %}active{% endif %}">
+      <a href="{% url 'resume_studio' %}" class="{% if request.resolver_match.url_name == 'resume_studio' or request.resolver_match.url_name == 'create_resume' or request.resolver_match.url_name == 'create_resume_form' %}active{% endif %}">
         <i class="fa-solid fa-id-card"></i><span>Resume Studio</span>
       </a>
     </li>
@@ -132,15 +122,9 @@
   <div class="container">
     <a class="navbar-brand" href="{% url 'home' %}">
       <i class="fa-solid fa-brain me-2" style="color:var(--amber)"></i>
-      Resume<span>AI</span>
+      Career<span>AI</span>
     </a>
     <div class="ms-auto d-flex align-items-center gap-2">
-      <button class="theme-toggle-btn" id="themeToggle" title="Toggle theme">
-        <i class="fa-solid fa-moon theme-icon-dark"></i>
-        <span class="theme-label-dark">Dark</span>
-        <i class="fa-solid fa-sun theme-icon-light"></i>
-        <span class="theme-label-light">Light</span>
-      </button>
       <a href="{% url 'login' %}" class="btn btn-secondary btn-sm">Login</a>
       <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Get Started</a>
     </div>
@@ -175,18 +159,10 @@
 {% block extra_js %}{% endblock %}
 
 <script>
-// Theme toggle (works for both sidebar & navbar toggle)
+// Force dark theme
 (function(){
-  const saved = localStorage.getItem('theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('#themeToggle');
-    if(!btn) return;
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-  });
+  document.documentElement.setAttribute('data-theme', 'dark');
+  localStorage.setItem('theme', 'dark');
 })();
 
 // Service Worker for PWA

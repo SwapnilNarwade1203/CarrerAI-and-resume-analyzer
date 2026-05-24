@@ -1,5 +1,5 @@
 // CareerAI Service Worker
-const CACHE_NAME = 'resumeai-v1';
+const CACHE_NAME = 'careerai-v1';
 const STATIC_ASSETS = [
   '/',
   '/static/css/style.css',

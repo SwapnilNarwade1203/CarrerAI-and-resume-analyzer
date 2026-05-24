@@ -26,7 +26,7 @@
           {% csrf_token %}
           <div class="mb-3">
             <label class="form-label text-muted small">Resume File (PDF/DOCX)</label>
-            <div class="upload-zone" id="uploadZone">
+            <div class="upload-zone-custom" id="uploadZone">
               <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
               <p class="upload-text">Drag & drop or <strong>browse</strong></p>
               <input type="file" name="resume_file" accept=".pdf,.docx" class="upload-input" required id="resumeFile">
@@ -74,13 +74,21 @@
       </div>
       <div class="card-glass-body p-0">
         {% for resume in resumes|slice:":5" %}
-        <a href="{% url 'analysis_detail' resume.pk %}" class="resume-item {% if forloop.first %}active{% endif %}">
-          <div class="resume-item-info">
-            <i class="fa-solid fa-file-pdf me-2"></i>
-            <span class="small">{{ resume.uploaded_at|date:"M d, Y" }}</span>
-          </div>
-          <span class="score-pill score-{{ resume.score|floatformat:0 }}">{{ resume.score }}%</span>
-        </a>
+        <div class="resume-item {% if forloop.first %}active{% endif %} d-flex align-items-center justify-content-between">
+          <a href="{% url 'analysis_detail' resume.pk %}" class="d-flex align-items-center justify-content-between flex-grow-1 text-decoration-none text-light me-2">
+            <div class="resume-item-info">
+              <i class="fa-solid fa-file-pdf me-2"></i>
+              <span class="small">{{ resume.uploaded_at|date:"M d, Y" }}</span>
+            </div>
+            <span class="score-pill score-{{ resume.score|floatformat:0 }}">{{ resume.score }}%</span>
+          </a>
+          <form method="post" action="{% url 'delete_resume' resume.pk %}" class="d-inline mb-0" onsubmit="return confirm('Are you sure you want to delete this resume?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-link text-danger p-0 border-0" style="font-size: 0.85rem;" title="Delete Resume">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </form>
+        </div>
         {% endfor %}
         {% if resumes.count > 2 %}
         <a href="{% url 'compare_resumes' %}" class="d-block text-center py-2 small link-primary">
@@ -218,7 +226,7 @@
             <div class="progress mt-1 mb-3" style="height:8px"><div class="progress-bar bg-accent" style="width:{{ market_insight.demand_score }}%"></div></div>
             <div class="text-muted small mb-1">Top Employers:</div>
             {% for emp in market_insight.top_employers|slice:":3" %}
-            <span class="badge bg-light text-dark me-1 mb-1">{{ emp }}</span>
+            <span class="badge bg-secondary text-white me-1 mb-1">{{ emp }}</span>
             {% endfor %}
           </div>
         </div>
@@ -345,24 +353,42 @@ document.querySelectorAll('.rec-tab').forEach(tab => {
   });
 });
 
-// File upload feedback
+// File upload feedback & Drag/Drop
 const fileInput = document.getElementById('resumeFile');
 const fileNameEl = document.getElementById('fileName');
-if(fileInput && fileNameEl){
+const uploadZone = document.getElementById('uploadZone');
+
+if(fileInput && fileNameEl && uploadZone){
+  // Prevent click propagation from the file input to the parent uploadZone
+  fileInput.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  // Update file name on selection change
   fileInput.addEventListener('change', function(){
     fileNameEl.textContent = this.files[0] ? this.files[0].name : 'Max 10MB · PDF or DOCX';
   });
-}
 
-// Drag & drop zone
-const uploadZone = document.getElementById('uploadZone');
-if(uploadZone){
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  // Drag & drop handlers
+  uploadZone.addEventListener('dragover', e => { 
+    e.preventDefault(); 
+    uploadZone.classList.add('drag-over'); 
+  });
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('drag-over');
+  });
   uploadZone.addEventListener('drop', e => {
     e.preventDefault();
     uploadZone.classList.remove('drag-over');
-    if(e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; fileNameEl.textContent = e.dataTransfer.files[0].name; }
+    if(e.dataTransfer.files[0]) { 
+      fileInput.files = e.dataTransfer.files; 
+      fileNameEl.textContent = e.dataTransfer.files[0].name; 
+    }
+  });
+
+  // Click handler to trigger file selection
+  uploadZone.addEventListener('click', function(){
+    fileInput.click();
   });
 }
 </script>

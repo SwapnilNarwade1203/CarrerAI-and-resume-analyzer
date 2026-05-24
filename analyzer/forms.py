@@ -37,7 +37,7 @@ class UserProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ['target_job_role', 'career_goals']
         widgets = {
-            'career_goals': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describe your career goals...'}),
+            'career_goals': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Describe your career goals...'}),
             'target_job_role': forms.Select(attrs={'class': 'form-select'}),
         }
 
