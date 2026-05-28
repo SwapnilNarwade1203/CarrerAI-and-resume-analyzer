@@ -11,7 +11,7 @@ python manage.py migrate --noinput
 echo "Seeding default data (skills, roles, questions)..."
 python manage.py populate_initial_data
 python manage.py import_aptitude_questions
-python manage.py import_skill_questions
+python manage.py import_skill_questions --generate
 python manage.py seed_company_questions
 
 # Collect static files
