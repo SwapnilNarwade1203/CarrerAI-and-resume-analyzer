@@ -7,6 +7,13 @@ set -e
 echo "Running database migrations..."
 python manage.py migrate --noinput
 
+# Populate default database tables automatically on startup
+echo "Seeding default data (skills, roles, questions)..."
+python manage.py populate_initial_data
+python manage.py import_aptitude_questions
+python manage.py import_skill_questions
+python manage.py seed_company_questions
+
 # Collect static files
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
