@@ -31,9 +31,14 @@
     <i class="fa-solid fa-brain me-1" style="color:var(--amber)"></i>
     Career<span>AI</span>
   </a>
-  <button class="mobile-toggle-btn" id="sidebar-toggle" aria-label="Toggle Navigation">
-    <i class="fa-solid fa-bars"></i>
-  </button>
+  <div class="d-flex align-items-center gap-2">
+    <a href="{% url 'logout' %}" class="btn btn-secondary p-0" style="border: 1.5px solid rgba(239, 68, 68, 0.25) !important; color: var(--red) !important; width: 40px; height: 40px; border-radius: 10px !important; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem;" title="Logout">
+      <i class="fa-solid fa-right-from-bracket"></i>
+    </a>
+    <button class="mobile-toggle-btn" id="sidebar-toggle" aria-label="Toggle Navigation">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+  </div>
 </div>
 
 <!-- ── SIDEBAR BACKDROP ────────────────────────────── -->
