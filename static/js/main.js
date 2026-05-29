@@ -68,4 +68,33 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // ── Sidebar Mobile Toggle ─────────────────────────
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebarClose = document.getElementById('sidebar-close');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  const sidebar = document.getElementById('sidebar');
+
+  if (sidebarToggle && sidebar && sidebarBackdrop) {
+    sidebarToggle.addEventListener('click', function () {
+      sidebar.classList.add('show');
+      sidebarBackdrop.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    });
+  }
+
+  function closeSidebar() {
+    if (sidebar && sidebarBackdrop) {
+      sidebar.classList.remove('show');
+      sidebarBackdrop.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+  }
+
+  if (sidebarClose) {
+    sidebarClose.addEventListener('click', closeSidebar);
+  }
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', closeSidebar);
+  }
+
 });

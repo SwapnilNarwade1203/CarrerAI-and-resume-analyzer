@@ -53,12 +53,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ai_resume_analyzer.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+import environ
+env = environ.Env()
+
+# Use PostgreSQL if DATABASE_URL is available in environment (e.g., on Render), fallback to SQLite locally
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': env.db(),
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

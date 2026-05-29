@@ -25,6 +25,20 @@
 <body>
 
 {% if user.is_authenticated %}
+<!-- ── MOBILE TOP BAR ──────────────────────────────── -->
+<div class="mobile-top-bar mobile-only">
+  <a href="{% url 'dashboard' %}" class="mobile-brand">
+    <i class="fa-solid fa-brain me-1" style="color:var(--amber)"></i>
+    Career<span>AI</span>
+  </a>
+  <button class="mobile-toggle-btn" id="sidebar-toggle" aria-label="Toggle Navigation">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+</div>
+
+<!-- ── SIDEBAR BACKDROP ────────────────────────────── -->
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
 <!-- ── VERTICAL SIDEBAR ─────────────────────────────── -->
 <nav class="vertical-sidebar" id="sidebar">
   <div class="sidebar-header">
@@ -32,6 +46,9 @@
       <i class="fa-solid fa-brain" style="color:var(--amber)"></i>
       Career<span>AI</span>
     </a>
+    <button class="sidebar-close-btn mobile-only" id="sidebar-close" aria-label="Close Sidebar">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
   </div>
 
   <ul class="sidebar-nav">

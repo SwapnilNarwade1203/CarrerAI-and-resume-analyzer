@@ -14,7 +14,7 @@
   <div class="col-lg-8">
     <div class="card-glass mb-4">
       <div class="card-glass-body text-center py-4">
-        <div class="score-ring-xl mx-auto mb-3"><span class="score-val-xl">{{ score|floatformat:0 }}<small>%</small></span></div>
+        <div class="score-ring-xl mx-auto mb-3" style="--score-pct:{{ score }}"><span class="score-val-xl">{{ score|floatformat:0 }}<small>%</small></span></div>
         <h4>{% if passed %}🎉 Congratulations! You passed!{% else %}Keep Practicing!{% endif %}</h4>
         <p class="text-muted">{{ correct }}/{{ total }} correct · Score: {{ score }}%</p>
         {% if passed %}<a href="{% url 'generate_certificate' skill.pk %}" class="btn btn-success me-2"><i class="fa-solid fa-certificate me-1"></i>Get Certificate</a>{% endif %}

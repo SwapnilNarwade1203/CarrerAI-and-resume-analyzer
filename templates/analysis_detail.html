@@ -13,7 +13,7 @@
   <div class="col-lg-4">
     <div class="card-glass mb-4">
       <div class="card-glass-body text-center">
-        <div class="score-ring-xl mx-auto mb-3">
+        <div class="score-ring-xl mx-auto mb-3" style="--score-pct:{{ resume.score }}">
           <span class="score-val-xl">{{ resume.score|floatformat:0 }}<small>%</small></span>
           <span class="score-label-sm">Overall Score</span>
         </div>

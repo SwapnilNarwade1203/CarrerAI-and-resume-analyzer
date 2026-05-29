@@ -127,22 +127,22 @@
     <div class="card-glass mb-4">
       <div class="card-glass-body">
         <div class="row align-items-center">
-          <div class="col-auto text-center">
-            <div class="score-ring-lg" style="--score-pct:{{ latest_resume.score }}">
+          <div class="col-12 col-sm-auto text-center mb-3 mb-sm-0">
+            <div class="score-ring-lg mx-auto" style="--score-pct:{{ latest_resume.score }}">
               <span class="score-val-lg">{{ latest_resume.score|floatformat:0 }}<span style="font-size:1rem">%</span></span>
             </div>
             <div class="score-label-sm mt-1">Overall Score</div>
           </div>
-          <div class="col">
+          <div class="col-12 col-sm text-center text-sm-start mb-3 mb-sm-0">
             <h5 class="mb-1">Resume Analysis Complete</h5>
             <p class="text-muted small mb-3">Uploaded {{ latest_resume.uploaded_at|date:"M d, Y" }}</p>
-            <div class="row g-2">
-              <div class="col-6"><div class="mini-stat {% if latest_resume.experience_present %}stat-good{% else %}stat-bad{% endif %}"><i class="fa-solid {% if latest_resume.experience_present %}fa-check{% else %}fa-xmark{% endif %}"></i> Experience</div></div>
-              <div class="col-6"><div class="mini-stat {% if latest_resume.projects_present %}stat-good{% else %}stat-bad{% endif %}"><i class="fa-solid {% if latest_resume.projects_present %}fa-check{% else %}fa-xmark{% endif %}"></i> Projects</div></div>
+            <div class="row g-2 justify-content-center justify-content-sm-start">
+              <div class="col-6 col-sm-auto"><div class="mini-stat {% if latest_resume.experience_present %}stat-good{% else %}stat-bad{% endif %}"><i class="fa-solid {% if latest_resume.experience_present %}fa-check{% else %}fa-xmark{% endif %}"></i> Experience</div></div>
+              <div class="col-6 col-sm-auto"><div class="mini-stat {% if latest_resume.projects_present %}stat-good{% else %}stat-bad{% endif %}"><i class="fa-solid {% if latest_resume.projects_present %}fa-check{% else %}fa-xmark{% endif %}"></i> Projects</div></div>
             </div>
           </div>
-          <div class="col-auto">
-            <a href="{% url 'analysis_detail' latest_resume.pk %}" class="btn btn-primary">View Analysis <i class="fa-solid fa-arrow-right ms-1"></i></a>
+          <div class="col-12 col-sm-auto text-center">
+            <a href="{% url 'analysis_detail' latest_resume.pk %}" class="btn btn-primary w-100 w-sm-auto">View Analysis <i class="fa-solid fa-arrow-right ms-1"></i></a>
           </div>
         </div>
       </div>
